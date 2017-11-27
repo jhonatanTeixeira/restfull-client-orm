@@ -1,4 +1,5 @@
 {
+    "name": "arquitetura/webservice-client",
     "autoload": {
         "psr-4": {
             "Vox\\": "src/"
