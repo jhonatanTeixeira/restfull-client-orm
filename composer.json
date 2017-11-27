@@ -1,5 +1,6 @@
 {
     "name": "arquitetura/webservice-client",
+    "license": "proprietary",
     "autoload": {
         "psr-4": {
             "Vox\\": "src/"
