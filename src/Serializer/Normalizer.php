@@ -35,8 +35,7 @@ class Normalizer implements NormalizerInterface
         /* @var $propertyMetadata PropertyMetadata */
         foreach ($objectMetadata->propertyMetadata as $propertyMetadata) {
             $binding = $propertyMetadata->getAnnotation(Bindings::class);
-            
-            $value  = $propertyMetadata->getValue($object);
+            $value   = $propertyMetadata->getValue($object);
             
             if ($this->supportsNormalization($value) 
                 && !in_array(spl_object_hash($value), $context['normalized'] ?? [])) {
@@ -44,8 +43,14 @@ class Normalizer implements NormalizerInterface
                 $value = $this->normalize($value, $format, $context);
             }
             
-            $target        = $binding ? ($binding->target ?? $binding->source ?? null) : $propertyMetadata->name;
-            $data[$target] = $value;
+            $target = $binding ? ($binding->target ?? $binding->source ?? null) : $propertyMetadata->name;
+            
+            if (preg_match('/\./', $target)) {
+                $path = implode("']['", explode('.', sprintf("['%s']", $target)));
+                eval("\$data$path = \$value;");
+            } else {
+                $data[$target] = $value;
+            }
         }
         
         return $data;
