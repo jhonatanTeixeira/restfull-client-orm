@@ -21,25 +21,32 @@ class DataTransferGatewayTest extends TestCase
         $gatewayTest = new GatewayTestOne();
         
         $target = $gateway->transferData($gatewayTest, GatewayTargetOne::class);
+        
+        $this->assertInstanceOf(GatewayTargetOne::class, $target);
+        $this->assertInstanceOf(GatewayTargetTwo::class, $target->getTwo());
+        $this->assertInstanceOf(GatewayTargetThree::class, $target->getThree());
+        $this->assertEquals('one', $target->getName());
+        $this->assertEquals('two', $target->getTwo()->getName());
+        $this->assertEquals('three', $target->getThree()->getName());
     }
 }
 
 class GatewayTestOne
 {
     /**
-     * @Bindings(target="targetOne")
+     * @Bindings(target="name")
      */
     private $one = 'one';
     
     /**
-     * @Bindings(target="targetTwo")
+     * @Bindings(target="two")
      * 
      * @var GatewayTestTwo
      */
     private $two;
     
     /**
-     * @Bindings(target="targetThree.name")
+     * @Bindings(target="three.name")
      * 
      * @var string
      */
@@ -64,12 +71,18 @@ class GatewayTestTwo
 
 class GatewayTargetOne
 {
-    private $name = 'two';
+    private $name;
     
     /**
      * @var GatewayTargetTwo
      */
     private $two;
+    
+    /**
+     *
+     * @var GatewayTargetThree
+     */
+    private $three;
     
     public function getName()
     {
@@ -80,21 +93,16 @@ class GatewayTargetOne
     {
         return $this->two;
     }
+    
+    public function getThree(): GatewayTargetThree
+    {
+        return $this->three;
+    }
 }
 
 class GatewayTargetTwo
 {
     private $name;
-    
-    /**
-     * @var GatewayTargetTwo
-     */
-    private $two;
-    
-    /**
-     * @var GatewayTargetThree
-     */
-    private $three;
     
     public function getName()
     {
