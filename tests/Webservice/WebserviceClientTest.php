@@ -16,6 +16,7 @@ use Vox\Data\Mapping\Bindings;
 use Vox\Data\Mapping\Discriminator;
 use Vox\Data\ObjectHydrator;
 use Vox\Metadata\Driver\AnnotationDriver;
+use Vox\Metadata\Driver\YmlDriver;
 use Vox\Serializer\Denormalizer;
 use Vox\Serializer\Normalizer;
 use Vox\Webservice\Mapping\Resource;
@@ -188,6 +189,45 @@ class WebserviceClientTest extends TestCase
         $this->assertInstanceOf(DateTime::class, $result->getOther()->getStubs()[0]->getDate());
         $this->assertEquals('1983-12-20', $result->getOther()->getStubs()[0]->getDate()->format('Y-m-d'));
     }
+    
+    public function testShouldUseYmlMetadata()
+    {
+        $client = new Client(['handler' => HandlerStack::create($this->mockHandler)]);
+        
+        $registry = new ClientRegistry();
+        $registry->set('some_client', $client);
+        
+        $metadataFactory = new MetadataFactory(new YmlDriver(__DIR__ . '/../fixtures/metadata', TransferMetadata::class));
+        $serializer = new Serializer(
+            [
+                new Normalizer($metadataFactory), 
+                new Denormalizer(new ObjectHydrator($metadataFactory))
+            ], 
+            [
+                new JsonEncoder()
+            ]
+        );
+        
+        $webserviceClient = new WebserviceClient($registry, $metadataFactory, $serializer, $serializer);
+        
+        $this->mockHandler->append(
+            new Response(
+                200,
+                ['Content-Type' => 'application/json'],
+                json_encode([
+                    'id' => 1,
+                    'name' => 'lorem',
+                    'e_mail' => 'ipsum',
+                ])
+            )
+        );
+        
+        $result = $webserviceClient->get(YmlStub::class, 1);
+        
+        $this->assertEquals(1, $result->getId());
+        $this->assertEquals('lorem', $result->getNome());
+        $this->assertEquals('ipsum', $result->getEmail());
+    }
 }
 
 /**
@@ -268,5 +308,38 @@ class ExtraStub extends SomeOtherStub
     public function getDate(): DateTime
     {
         return $this->date;
+    }
+}
+
+class YmlStub
+{
+    /**
+     * @var int
+     */
+    private $id;
+    
+    /**
+     * @var string
+     */
+    private $nome;
+    
+    /**
+     * @var string
+     */
+    private $email;
+    
+    public function getId()
+    {
+        return $this->id;
+    }
+        
+    public function getNome()
+    {
+        return $this->nome;
+    }
+
+    public function getEmail()
+    {
+        return $this->email;
     }
 }
