@@ -42,9 +42,9 @@ class YmlDriver implements DriverInterface
         $classMetadata = (new ReflectionClass($this->classMetadataClassName))->newInstance($class->name);
         
         if (isset($yml['resource'])) {
-            $resource = new Resource();
+            $resource         = new Resource();
             $resource->client = $yml['resource']['client'] ?? null;
-            $resource->route = $yml['resource']['route'] ?? null;
+            $resource->route  = $yml['resource']['route'] ?? null;
             $classMetadata->setAnnotations([Resource::class => $resource]);
         }
         
@@ -52,19 +52,25 @@ class YmlDriver implements DriverInterface
             $classMetadata->addMethodMetadata(new MethodMetadata($class->name, $method->name));
         }
         
-        foreach ($yml['parameters'] ?? [] as $name => $config) {
+        /* @var $reflectionProperty \ReflectionProperty */
+        foreach ($class->getProperties() as $reflectionProperty) {
             $annotations = [];
             $annotations[Bindings::class] = $bindings = new Bindings();
-            $bindings->source = $config['bindings']['source'] ?? null;
-            $bindings->target = $config['bindings']['target'] ?? null;
             
-            if ($name == $yml['id'] ?? null) {
-                $annotations[Id::class] = new Id();
+            if (isset($yml['parameters'][$reflectionProperty->name])) {
+                $name             = $reflectionProperty->name;
+                $config           = $yml['parameters'][$name];
+                $bindings->source = $config['bindings']['source'] ?? null;
+                $bindings->target = $config['bindings']['target'] ?? null;
+
+                if ($name == $yml['id'] ?? null) {
+                    $annotations[Id::class] = new Id();
+                }
             }
             
             /* @var $propertyMetadata PropertyMetadata */
             $propertyMetadata = (new ReflectionClass($this->propertyMetadataClassName))
-                ->newInstance($class->name, $name);
+                ->newInstance($class->name, $reflectionProperty->name);
             
             $propertyMetadata->setAnnotations($annotations);
             
