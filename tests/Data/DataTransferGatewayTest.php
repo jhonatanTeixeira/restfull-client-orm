@@ -10,7 +10,7 @@ use Vox\Metadata\Driver\AnnotationDriver;
 
 class DataTransferGatewayTest extends TestCase
 {
-    public function testShouldTransferData()
+    public function testShouldTransferDataToObject()
     {
         $metadataFactory  = new MetadataFactory(new AnnotationDriver(new AnnotationReader()));
         $propertyAccessor = new PropertyAccessor($metadataFactory);
@@ -20,7 +20,27 @@ class DataTransferGatewayTest extends TestCase
         
         $gatewayTest = new GatewayTestOne();
         
-        $target = $gateway->transferData($gatewayTest, GatewayTargetOne::class);
+        $target = $gateway->transferDataTo($gatewayTest, GatewayTargetOne::class);
+        
+        $this->assertInstanceOf(GatewayTargetOne::class, $target);
+        $this->assertInstanceOf(GatewayTargetTwo::class, $target->getTwo());
+        $this->assertInstanceOf(GatewayTargetThree::class, $target->getThree());
+        $this->assertEquals('one', $target->getName());
+        $this->assertEquals('two', $target->getTwo()->getName());
+        $this->assertEquals('three', $target->getThree()->getName());
+    }
+    
+    public function testShouldTransferDataFromObject()
+    {
+        $metadataFactory  = new MetadataFactory(new AnnotationDriver(new AnnotationReader()));
+        $propertyAccessor = new PropertyAccessor($metadataFactory);
+        $graphBuilder     = new ObjectGraphBuilder($metadataFactory, $propertyAccessor);
+        
+        $gateway = new DataTransferGateway($graphBuilder, $metadataFactory, $propertyAccessor);
+        
+        $gatewayTest = new GatewayTestOne();
+        
+        $target = $gateway->transferDataFrom($gatewayTest, GatewayTargetOne::class);
         
         $this->assertInstanceOf(GatewayTargetOne::class, $target);
         $this->assertInstanceOf(GatewayTargetTwo::class, $target->getTwo());
@@ -30,6 +50,7 @@ class DataTransferGatewayTest extends TestCase
         $this->assertEquals('three', $target->getThree()->getName());
     }
 }
+
 
 class GatewayTestOne
 {
@@ -71,6 +92,11 @@ class GatewayTestTwo
 
 class GatewayTargetOne
 {
+    /**
+     * @Bindings(source="one")
+     *
+     * @var string
+     */
     private $name;
     
     /**
@@ -79,7 +105,6 @@ class GatewayTargetOne
     private $two;
     
     /**
-     *
      * @var GatewayTargetThree
      */
     private $three;
@@ -102,6 +127,11 @@ class GatewayTargetOne
 
 class GatewayTargetTwo
 {
+    /**
+     * @Bindings(source="two.name")
+     *
+     * @var type 
+     */
     private $name;
     
     public function getName()
@@ -112,6 +142,11 @@ class GatewayTargetTwo
 
 class GatewayTargetThree
 {
+    /**
+     * @Bindings(source="three")
+     *
+     * @var string
+     */
     private $name;
     
     public function getName()
