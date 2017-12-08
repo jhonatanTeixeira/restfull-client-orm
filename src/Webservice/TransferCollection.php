@@ -5,6 +5,7 @@ namespace Vox\Webservice;
 use Doctrine\Common\Collections\ArrayCollection;
 use Psr\Http\Message\ResponseInterface;
 use Symfony\Component\Serializer\Normalizer\DenormalizerInterface;
+use Vox\Webservice\Proxy\ProxyFactoryInterface;
 
 class TransferCollection extends ArrayCollection
 {
@@ -19,6 +20,16 @@ class TransferCollection extends ArrayCollection
      * @var ObjectStorageInterface
      */
     private $objectStorage;
+    
+    /**
+     * @var ProxyFactoryInterface
+     */
+    private $proxyFactory;
+    
+    /**
+     * @var TransferManagerInterface
+     */
+    private $transferManager;
     
     public function __construct(string $transferName, DenormalizerInterface $denormalizer, ResponseInterface $response)
     {
@@ -47,6 +58,10 @@ class TransferCollection extends ArrayCollection
         
         if (!is_object($data)) {
             $data = $this->denormalizer->denormalize($data, $this->transferName);
+            
+            if ($this->proxyFactory && $this->transferManager) {
+                $data = $this->proxyFactory->createProxy($data, $this->transferManager);
+            }
             
             $this->offsetSet($offset, $data);
         }
@@ -77,5 +92,19 @@ class TransferCollection extends ArrayCollection
     public function setObjectStorage(ObjectStorageInterface $objectStorage)
     {
         $this->objectStorage = $objectStorage;
+    }
+    
+    public function setProxyFactory(ProxyFactoryInterface $proxyFactory)
+    {
+        $this->proxyFactory = $proxyFactory;
+        
+        return $this;
+    }
+
+    public function setTransferManager(TransferManagerInterface $transferManager)
+    {
+        $this->transferManager = $transferManager;
+        
+        return $this;
     }
 }

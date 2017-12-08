@@ -3,6 +3,8 @@
 namespace Vox\Metadata;
 
 use Metadata\PropertyMetadata as BaseMetadata;
+use ProxyManager\Proxy\AccessInterceptorValueHolderInterface;
+use ReflectionClass;
 
 class PropertyMetadata extends BaseMetadata
 {
@@ -11,7 +13,7 @@ class PropertyMetadata extends BaseMetadata
     public $type;
     
     /**
-     * @param \ReflectionClass $class
+     * @param ReflectionClass $class
      * @param string $name
      */
     public function __construct($class, $name)
@@ -19,6 +21,24 @@ class PropertyMetadata extends BaseMetadata
         parent::__construct($class, $name);
         
         $this->type = $this->parseType();
+    }
+    
+    public function getValue($obj)
+    {
+        if ($obj instanceof AccessInterceptorValueHolderInterface) {
+            $obj = $obj->getWrappedValueHolderValue();
+        }
+        
+        return parent::getValue($obj);
+    }
+    
+    public function setValue($obj, $value)
+    {
+        if ($obj instanceof AccessInterceptorValueHolderInterface) {
+            $obj = $obj->getWrappedValueHolderValue();
+        }
+        
+        parent::setValue($obj, $value);
     }
     
     private function parseType()

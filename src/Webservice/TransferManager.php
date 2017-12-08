@@ -5,6 +5,8 @@ namespace Vox\Webservice;
 use Doctrine\Common\Persistence\ObjectRepository;
 use Metadata\MetadataFactoryInterface;
 use Vox\Webservice\Metadata\TransferMetadata;
+use Vox\Webservice\Proxy\ProxyFactory;
+use Vox\Webservice\Proxy\ProxyFactoryInterface;
 
 class TransferManager implements TransferManagerInterface
 {
@@ -23,10 +25,17 @@ class TransferManager implements TransferManagerInterface
      */
     private $webserviceClient;
     
+    /**
+     * @var ProxyFactoryInterface
+     */
+    private $proxyFactory;
+    
     public function __construct(MetadataFactoryInterface $metadataFactory, WebserviceClientInterface $webserviceClient)
     {
         $this->metadataFactory  = $metadataFactory;
         $this->webserviceClient = $webserviceClient;
+        $this->proxyFactory     = new ProxyFactory();
+        
         $this->clear();
     }
     
@@ -71,7 +80,13 @@ class TransferManager implements TransferManagerInterface
 
     public function getRepository($className): ObjectRepository
     {
-        return new TransferRepository($className, $this->webserviceClient, $this->unityOfWork);
+        return new TransferRepository(
+            $className,
+            $this->webserviceClient,
+            $this->unityOfWork,
+            $this,
+            $this->proxyFactory
+        );
     }
 
     public function initializeObject($obj)

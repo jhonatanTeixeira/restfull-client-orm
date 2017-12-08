@@ -5,11 +5,13 @@ namespace Vox\Metadata\Driver;
 use Metadata\Driver\DriverInterface;
 use Metadata\MethodMetadata;
 use ReflectionClass;
+use ReflectionProperty;
 use RuntimeException;
 use Symfony\Component\Yaml\Parser;
 use Vox\Data\Mapping\Bindings;
 use Vox\Metadata\ClassMetadata;
 use Vox\Metadata\PropertyMetadata;
+use Vox\Webservice\Mapping\BelongsTo;
 use Vox\Webservice\Mapping\Id;
 use Vox\Webservice\Mapping\Resource;
 
@@ -52,7 +54,7 @@ class YmlDriver implements DriverInterface
             $classMetadata->addMethodMetadata(new MethodMetadata($class->name, $method->name));
         }
         
-        /* @var $reflectionProperty \ReflectionProperty */
+        /* @var $reflectionProperty ReflectionProperty */
         foreach ($class->getProperties() as $reflectionProperty) {
             $annotations = [];
             $annotations[Bindings::class] = $bindings = new Bindings();
@@ -65,6 +67,12 @@ class YmlDriver implements DriverInterface
 
                 if ($name == $yml['id'] ?? null) {
                     $annotations[Id::class] = new Id();
+                }
+                
+                if (isset($config['belongsTo'])) {
+                    $belongsTo = new BelongsTo();
+                    $belongsTo->foreignField = $config['belongsTo']['foreignField'];
+                    $annotations[BelongsTo::class] = $belongsTo;
                 }
             }
             

@@ -7,7 +7,6 @@ use BadMethodCallException;
 use Metadata\MetadataFactoryInterface;
 use RuntimeException;
 use SplObjectStorage;
-use Vox\Webservice\Metadata\TransferMetadata;
 
 class UnityOfWork implements UnityOfWorkInterface
 {
@@ -101,15 +100,6 @@ class UnityOfWork implements UnityOfWorkInterface
         }
         
         return $id->getValue($object);
-    }
-    
-    private function getClassMetadata($object): TransferMetadata
-    {
-        if (is_object($object)) {
-            $object = get_class($object);
-        }
-        
-        return $this->metadataFactory->getMetadataForClass($object);
     }
     
     public function flush()
