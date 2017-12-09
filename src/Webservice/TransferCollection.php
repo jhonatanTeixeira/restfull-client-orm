@@ -92,6 +92,8 @@ class TransferCollection extends ArrayCollection
     public function setObjectStorage(ObjectStorageInterface $objectStorage)
     {
         $this->objectStorage = $objectStorage;
+        
+        return $this;
     }
     
     public function setProxyFactory(ProxyFactoryInterface $proxyFactory)

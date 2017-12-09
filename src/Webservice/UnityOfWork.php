@@ -82,12 +82,12 @@ class UnityOfWork implements UnityOfWorkInterface
             $this->data->detach($object);
         }
         
-        if ($this->newObjects->contains($object)) {
-            $this->newObjects->detach($object);
+        if (!$this->newObjects->contains($object) && !$this->removedObjects->contains($object)) {
+            $this->removedObjects->attach($object);
         }
         
-        if (!$this->removedObjects->contains($object)) {
-            $this->removedObjects->attach($object);
+        if ($this->newObjects->contains($object)) {
+            $this->newObjects->detach($object);
         }
     }
     

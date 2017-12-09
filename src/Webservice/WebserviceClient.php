@@ -56,7 +56,14 @@ class WebserviceClient implements WebserviceClientInterface
 
     public function delete(string $transferName, $id)
     {
-        
+        $resource = $this->getResource($transferName);
+        $client   = $this->getClient($transferName);
+        $route    = sprintf('%s/%s', $resource->route, $id);
+        $response = $client->request('DELETE', $route);
+
+        if ($response->getStatusCode() >= 300) {
+            throw new Exception($response->getReasonPhrase());
+        }
     }
 
     public function get(string $transferName, $id)
