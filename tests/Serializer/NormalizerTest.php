@@ -15,6 +15,8 @@ class NormalizerTest extends TestCase
         $compare = [
             'name' => 'abcd',
             'type' => Some::class,
+            'othersArray' => null,
+            'othersArray2' => null,
             'other' => [
                 'type' => Other::class,
                 'name' => 'abcdfg',
@@ -28,6 +30,58 @@ class NormalizerTest extends TestCase
         
         $this->assertEquals($normalized, $compare);
     }
+    
+    public function testShouldNormalizeCollection()
+    {
+        $compare = [
+            'name' => 'abcd',
+            'type' => Some::class,
+            'othersArray' => [
+                [
+                    'name' => 'aaaa'
+                ],
+                [
+                    'name' => 'bbbb'
+                ],
+            ],
+            'othersArray2' => [
+                [
+                    'type' => Other::class,
+                    'name' => 'abcdfg',
+                ],
+                [
+                    'type' => Other::class,
+                    'name' => 'abcdfg'
+                ],
+            ],
+            'other' => [
+                'type' => Other::class,
+                'name' => 'abcdfg',
+                'last_name' => 'efg'
+            ]
+        ];
+
+        $normalizer = new Normalizer(new MetadataFactory(new AnnotationDriver(new AnnotationReader())));
+        
+        $some = new Some();
+        $some->othersArray = [
+            [
+                'name' => 'aaaa'
+            ],
+            [
+                'name' => 'bbbb'
+            ],
+        ];
+        
+        $some->othersArray2 = [
+            new Other(),
+            new Other(),
+        ];
+        
+        $normalized = $normalizer->normalize($some);
+        
+        $this->assertEquals($normalized, $compare);
+    }
 }
 
 class Some
@@ -35,6 +89,16 @@ class Some
     private $name = 'abcd';
     
     private $other;
+    
+    /**
+     * @var array
+     */
+    public $othersArray;
+
+    /**
+     * @var Other[]
+     */
+    public $othersArray2;
     
     /**
      * @Bindings(target="other.last_name")

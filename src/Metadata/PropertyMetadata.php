@@ -45,9 +45,10 @@ class PropertyMetadata extends BaseMetadata
     {
         $docComment = $this->reflection->getDocComment();
         
-        preg_match('/@var (.*)/', $docComment, $matches);
+        preg_match('/@var\s+(([^\[\]\s]+)(\[\])?)/', $docComment, $matches);
         
-        $type = $matches[1] ?? null;
+        $fullType = $matches[1] ?? null;
+        $type     = $matches[2] ?? null;
         
         if (null === $type) {
             return;
@@ -57,15 +58,15 @@ class PropertyMetadata extends BaseMetadata
         
         foreach ($uses as $use) {
             if (preg_match("/{$type}$/", $use)) {
-                return $use;
+                return $use . ($matches[3] ?? null);
             }
             
             if (class_exists("$use\\$type")) {
-                return "$use\\$type";
+                return "$use\\$type" . ($matches[3] ?? null);
             }
         }
         
-        return $type;
+        return $fullType;
     }
     
     private function getClassUses(): array
@@ -75,13 +76,13 @@ class PropertyMetadata extends BaseMetadata
         if (is_file($filename)) {
             $contents = file_get_contents($filename);
             
-            preg_match_all('/use (.*);/', $contents, $matches);
+            preg_match_all('/use\s+(.*);/', $contents, $matches);
             
             $uses = $matches[1] ?? [];
             
             $matches = [];
             
-            preg_match('/namespace (.*);/', $contents, $matches);
+            preg_match('/namespace\s+(.*);/', $contents, $matches);
             
             if (!empty($matches[1])) {
                 array_push($uses, $matches[1]);
