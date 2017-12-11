@@ -50,7 +50,8 @@ class UnityOfWork implements UnityOfWorkInterface
     
     public function contains($object): bool
     {
-        return $this->cleanData->contains($object);
+        return $this->data->contains($object)
+            || $this->newObjects->contains($object);
     }
     
     public function attach($object)
@@ -91,17 +92,6 @@ class UnityOfWork implements UnityOfWorkInterface
         }
     }
     
-    private function getIdValue($object)
-    {
-        $id = $this->getClassMetadata($object)->id;
-        
-        if (!$id) {
-            throw new RuntimeException("transfer " . get_class($object) . " has no id mapping");
-        }
-        
-        return $id->getValue($object);
-    }
-    
     public function flush()
     {
         foreach ($this->newObjects as $newTransfer) {
@@ -119,6 +109,25 @@ class UnityOfWork implements UnityOfWorkInterface
         foreach ($this->removedObjects as $removedObject) {
             $this->webserviceClient->delete(get_class($removedObject), $this->getIdValue($removedObject));
         }
+    }
+    
+    public function isNew($object): bool
+    {
+        return empty($this->getIdValue($object)) 
+            && ($this->newObjects->contains($object)
+                || !$this->cleanData->contains($object));
+    }
+    
+    public function isDirty($object): bool
+    {
+        return $this->data->contains($object)
+            && !$this->cleanData->isEquals($object);
+    }
+    
+    public function isDetached($object): bool
+    {
+        return !empty($this->getIdValue($object))
+            && !$this->cleanData->contains($object);
     }
 
     public function getIterator()

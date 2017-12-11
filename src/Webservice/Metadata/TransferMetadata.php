@@ -14,6 +14,11 @@ class TransferMetadata extends ClassMetadata
      */
     public $id;
     
+    /**
+     * @var PropertyMetadata
+     */
+    public $associations;
+    
     public function addPropertyMetadata(BasePropertyMetadata $metadata)
     {
         if ($metadata instanceof PropertyMetadata) {
@@ -23,5 +28,20 @@ class TransferMetadata extends ClassMetadata
         }
         
         parent::addPropertyMetadata($metadata);
+        
+        if ($metadata->hasAnnotation(\Vox\Webservice\Mapping\BelongsTo::class)) {
+            $this->associations[$metadata->name] = $metadata;
+        }
+        
+        return $this;
+    }
+    
+    /**
+     * @param string $name
+     * @return PropertyMetadata
+     */
+    public function getAssociation(string $name)
+    {
+        return $this->associations[$name] ?? null;
     }
 }

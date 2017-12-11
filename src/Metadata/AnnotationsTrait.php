@@ -26,4 +26,9 @@ trait AnnotationsTrait
         
         return $this->annotations[$annotationName] ?? null;
     }
+    
+    public function hasAnnotation(string $annotationName)
+    {
+        return isset($this->annotations[$annotationName]);
+    }
 }
