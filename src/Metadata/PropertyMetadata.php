@@ -93,4 +93,21 @@ class PropertyMetadata extends BaseMetadata
         
         return [];
     }
+    
+    public function serialize()
+    {
+        return serialize(array(
+            $this->class,
+            $this->name,
+            $this->annotations,
+        ));
+    }
+
+    public function unserialize($str)
+    {
+        list($this->class, $this->name, $this->annotations) = unserialize($str);
+
+        $this->reflection = new \ReflectionProperty($this->class, $this->name);
+        $this->reflection->setAccessible(true);
+    }
 }

@@ -4,7 +4,7 @@ namespace Vox\Metadata;
 
 trait AnnotationsTrait
 {
-    private $annotations;
+    public $annotations;
     
     public function getAnnotations(): array
     {
