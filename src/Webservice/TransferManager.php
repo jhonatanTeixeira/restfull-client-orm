@@ -30,11 +30,14 @@ class TransferManager implements TransferManagerInterface
      */
     private $proxyFactory;
     
-    public function __construct(MetadataFactoryInterface $metadataFactory, WebserviceClientInterface $webserviceClient)
-    {
+    public function __construct(
+        MetadataFactoryInterface $metadataFactory,
+        WebserviceClientInterface $webserviceClient,
+        Vox\Webservice\Proxy\ProxyFactoryInterface $proxyFactory = null
+    ) {
         $this->metadataFactory  = $metadataFactory;
         $this->webserviceClient = $webserviceClient;
-        $this->proxyFactory     = new ProxyFactory();
+        $this->proxyFactory     = $proxyFactory ?? new ProxyFactory();
         
         $this->clear();
     }
