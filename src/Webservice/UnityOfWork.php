@@ -32,20 +32,13 @@ class UnityOfWork implements UnityOfWorkInterface
      */
     private $removedObjects;
     
-    /**
-     * @var WebserviceClientInterface
-     */
-    private $webserviceClient;
-    
-    public function __construct(WebserviceClientInterface $webserviceClient, MetadataFactoryInterface $metadataFactory)
+    public function __construct(MetadataFactoryInterface $metadataFactory)
     {
-        $this->webserviceClient = $webserviceClient;
-        $this->metadataFactory  = $metadataFactory;
-        
-        $this->cleanData      = new ObjectStorage($metadataFactory);
-        $this->data           = new ObjectStorage($metadataFactory);
-        $this->newObjects     = new SplObjectStorage();
-        $this->removedObjects = new SplObjectStorage();
+        $this->metadataFactory = $metadataFactory;
+        $this->cleanData       = new ObjectStorage($metadataFactory);
+        $this->data            = new ObjectStorage($metadataFactory);
+        $this->newObjects      = new SplObjectStorage();
+        $this->removedObjects  = new SplObjectStorage();
     }
     
     public function contains($object): bool
@@ -75,16 +68,12 @@ class UnityOfWork implements UnityOfWorkInterface
     
     public function detach($object)
     {
-        if ($this->data->contains($object)) {
-            $this->data->detach($object);
+        if ($this->cleanData->contains($object)) {
+            $this->cleanData->detach($object);
         }
         
         if ($this->data->contains($object)) {
             $this->data->detach($object);
-        }
-        
-        if (!$this->newObjects->contains($object) && !$this->removedObjects->contains($object)) {
-            $this->removedObjects->attach($object);
         }
         
         if ($this->newObjects->contains($object)) {
@@ -92,23 +81,17 @@ class UnityOfWork implements UnityOfWorkInterface
         }
     }
     
-    public function flush()
+    public function remove($object)
     {
-        foreach ($this->newObjects as $newTransfer) {
-            $this->webserviceClient->post($newTransfer);
+        if (!$this->contains($object)) {
+            throw new \RuntimeException('object ' . get_class($object) . 'is not managed');
         }
         
-        foreach ($this->data as $transfer) {
-            if ($this->cleanData->isEquals($transfer)) {
-                continue;
-            }
-            
-            $this->webserviceClient->put($transfer);
+        if (!$this->removedObjects->contains($object)) {
+            $this->removedObjects->attach($object);
         }
         
-        foreach ($this->removedObjects as $removedObject) {
-            $this->webserviceClient->delete(get_class($removedObject), $this->getIdValue($removedObject));
-        }
+        $this->detach($object);
     }
     
     public function isNew($object): bool
@@ -134,7 +117,8 @@ class UnityOfWork implements UnityOfWorkInterface
     {
         $iterator = new AppendIterator();
         $iterator->append($this->newObjects);
-        $iterator->append($this->data);
+        $iterator->append($this->data->getIterator());
+        $iterator->append($this->removedObjects);
         
         return $iterator;
     }
@@ -142,5 +126,10 @@ class UnityOfWork implements UnityOfWorkInterface
     public function isEquals($object): bool
     {
         throw new BadMethodCallException('not implemented');
+    }
+
+    public function isRemoved($object): bool
+    {
+        return $this->removedObjects->contains($object);
     }
 }

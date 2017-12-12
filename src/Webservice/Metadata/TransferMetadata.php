@@ -15,9 +15,9 @@ class TransferMetadata extends ClassMetadata
     public $id;
     
     /**
-     * @var PropertyMetadata
+     * @var PropertyMetadata[]
      */
-    public $associations;
+    public $associations = [];
     
     public function addPropertyMetadata(BasePropertyMetadata $metadata)
     {

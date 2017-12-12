@@ -40,11 +40,15 @@ class ObjectStorage implements ObjectStorageInterface
 
     public function getIterator()
     {
+        $items = [];
+        
         foreach ($this->storage as $transferData) {
             foreach ($transferData as $item) {
-                yield $item;
+                $items[] = $item;
             }
         }
+        
+        return new \ArrayIterator($items);
     }
 
     public function isEquals($object): bool

@@ -299,6 +299,23 @@ class TransferManagerTest extends TestCase
         
         $this->assertEquals('relation', $relation->getName());
     }
+    
+    public function testShouldPostRelated()
+    {
+        $related = new RelatedStub();
+        $relation = new RelationStub();
+        $relation->setName('ssss');
+        $related->setRelated($relation);
+        
+        $this->webserviceClient->expects($this->exactly(2))
+            ->method('post')
+            ->withConsecutive([$relation], [$related])
+            ->willReturn(null);
+        
+        $this->transferManager->persist($related);
+        
+        $this->transferManager->flush();
+    }
 }
 
 /**
@@ -387,6 +404,11 @@ class RelatedStub
     {
         return $this->related;
     }
+    
+    public function setRelated(RelationStub $related)
+    {
+        $this->related = $related;
+    }
 }
 
 /**
@@ -411,5 +433,10 @@ class RelationStub
     public function getName()
     {
         return $this->name;
+    }
+    
+    public function setName($name)
+    {
+        $this->name = $name;
     }
 }

@@ -26,22 +26,39 @@ class TransferManager implements TransferManagerInterface
     private $webserviceClient;
     
     /**
+     * @var TransferPersisterInterface
+     */
+    private $transferPersister;
+    
+    /**
      * @var ProxyFactoryInterface
      */
     private $proxyFactory;
     
-    public function __construct(MetadataFactoryInterface $metadataFactory, WebserviceClientInterface $webserviceClient)
-    {
-        $this->metadataFactory  = $metadataFactory;
-        $this->webserviceClient = $webserviceClient;
-        $this->proxyFactory     = new ProxyFactory();
+    public function __construct(
+        MetadataFactoryInterface $metadataFactory,
+        WebserviceClientInterface $webserviceClient
+    ) {
+        $this->metadataFactory   = $metadataFactory;
+        $this->webserviceClient  = $webserviceClient;
+        $this->proxyFactory      = new ProxyFactory();
         
         $this->clear();
     }
     
+    /**
+     * @todo injection of these objects
+     * 
+     * @param type $objectName
+     */
     public function clear($objectName = null)
     {
-        $this->unityOfWork = new UnityOfWork($this->webserviceClient, $this->metadataFactory);
+        $this->unityOfWork       = new UnityOfWork($this->metadataFactory);
+        $this->transferPersister = new TransferPersister(
+            $this->metadataFactory,
+            $this->unityOfWork,
+            $this->webserviceClient
+        );
     }
 
     public function contains($object): bool
@@ -61,7 +78,9 @@ class TransferManager implements TransferManagerInterface
 
     public function flush()
     {
-        $this->unityOfWork->flush();
+        foreach ($this->unityOfWork as $transfer) {
+            $this->transferPersister->save($transfer);
+        }
     }
 
     public function getClassMetadata($className): TransferMetadata
@@ -111,6 +130,6 @@ class TransferManager implements TransferManagerInterface
 
     public function remove($object)
     {
-        $this->unityOfWork->detach($object);
+        $this->unityOfWork->remove($object);
     }
 }

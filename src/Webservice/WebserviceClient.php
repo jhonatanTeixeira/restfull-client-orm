@@ -112,6 +112,8 @@ class WebserviceClient implements WebserviceClientInterface
         if ($response->getStatusCode() >= 300) {
             throw new Exception($response->getReasonPhrase());
         }
+        
+        $this->denormalizer->denormalize(json_decode($response->getBody()->getContents(), true), $transfer);
     }
     
     private function getClient(string $transferName, Resource $resource = null): ClientInterface
