@@ -100,12 +100,13 @@ class PropertyMetadata extends BaseMetadata
             $this->class,
             $this->name,
             $this->annotations,
+            $this->type,
         ));
     }
 
     public function unserialize($str)
     {
-        list($this->class, $this->name, $this->annotations) = unserialize($str);
+        list($this->class, $this->name, $this->annotations, $this->type) = unserialize($str);
 
         $this->reflection = new \ReflectionProperty($this->class, $this->name);
         $this->reflection->setAccessible(true);

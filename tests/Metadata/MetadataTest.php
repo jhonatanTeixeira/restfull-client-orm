@@ -23,6 +23,8 @@ class MetadataTest extends TestCase
         $this->assertInstanceOf(ClassMetadata::class, $unserialized);
         $this->assertInstanceOf(PropertyMetadata::class, $unserialized->propertyMetadata['name']);
         $this->assertEquals('lorem', $unserialized->propertyMetadata['name']->getValue(new MetadataStub()));
+        $this->assertEquals('int', $unserialized->propertyMetadata['name']->type);
+        $this->assertCount(1, $unserialized->propertyMetadata);
     }
     
     public function testShouldSerializeTransferMetadatas()
@@ -43,5 +45,8 @@ class MetadataTest extends TestCase
 
 class MetadataStub
 {
+    /**
+     * @var int
+     */
     private $name = 'lorem';
 }
