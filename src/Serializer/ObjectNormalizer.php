@@ -3,10 +3,12 @@
 namespace Vox\Serializer;
 
 use Symfony\Component\Serializer\Mapping\Factory\ClassMetadataFactoryInterface;
+use Symfony\Component\Serializer\NameConverter\CamelCaseToSnakeCaseNameConverter;
 use Symfony\Component\Serializer\NameConverter\NameConverterInterface;
-use Symfony\Component\Serializer\Normalizer\AbstractNormalizer;
+use Symfony\Component\Serializer\Normalizer\DenormalizerInterface;
+use Symfony\Component\Serializer\Normalizer\NormalizerInterface;
 
-class ObjectNormalizer extends AbstractNormalizer
+class ObjectNormalizer implements NormalizerInterface, DenormalizerInterface
 {
     /**
      * @var Normalizer
@@ -19,21 +21,24 @@ class ObjectNormalizer extends AbstractNormalizer
     private $denormalizer;
     
     /**
-     * @param \Vox\Serializer\Normalizer $normalizer
-     * @param \Vox\Serializer\Denormalizer $denormalizer
+     * @var NameConverterInterface
+     */
+    private $nameConverter;
+    
+    /**
+     * @param Normalizer $normalizer
+     * @param Denormalizer $denormalizer
      * @param ClassMetadataFactoryInterface $classMetadataFactory
      * @param NameConverterInterface $nameConverter
      */
     public function __construct(
         Normalizer $normalizer,
         Denormalizer $denormalizer,
-        ClassMetadataFactoryInterface $classMetadataFactory = null,
         NameConverterInterface $nameConverter = null
     ) {
-        $this->normalizer   = $normalizer;
-        $this->denormalizer = $denormalizer;
-        
-        parent::__construct($classMetadataFactory, $nameConverter);
+        $this->normalizer    = $normalizer;
+        $this->denormalizer  = $denormalizer;
+        $this->nameConverter = $nameConverter ?? new CamelCaseToSnakeCaseNameConverter();
     }
     
     public function denormalize($data, $class, $format = null, array $context = array())
