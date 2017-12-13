@@ -4,6 +4,7 @@ namespace Vox\Metadata\Driver;
 
 use Metadata\Driver\DriverInterface;
 use Metadata\MethodMetadata;
+use ProxyManager\Proxy\AccessInterceptorValueHolderInterface;
 use ReflectionClass;
 use ReflectionProperty;
 use RuntimeException;
@@ -38,6 +39,10 @@ class YmlDriver implements DriverInterface
     
     public function loadMetadataForClass(ReflectionClass $class): ClassMetadata
     {
+        if ($class->implementsInterface(AccessInterceptorValueHolderInterface::class)) {
+            $class = $class->getParentClass();
+        }
+        
         $yml = $this->loadYml($class);
         
         /* @var $classMetadata ClassMetadata */

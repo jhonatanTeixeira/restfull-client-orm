@@ -74,5 +74,4 @@ class TransferMetadata extends ClassMetadata
 
         $this->reflection = new \ReflectionClass($this->name);
     }
-
 }
