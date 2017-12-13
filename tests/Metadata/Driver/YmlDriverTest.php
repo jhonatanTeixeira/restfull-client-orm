@@ -4,12 +4,15 @@ namespace Vox\Metadata\Driver;
 
 use PHPUnit\Framework\TestCase;
 use ReflectionClass;
+use Vox\Data\Mapping\Exclude;
+use Vox\Webservice\Mapping\BelongsTo;
+use Vox\Webservice\Metadata\TransferMetadata;
 
 class YmlDriverTest extends TestCase
 {
     public function testShouldLoadYmlMetadata()
     {
-        $ymlDriver = new YmlDriver(__DIR__ . '/../../fixtures/metadata');
+        $ymlDriver = new YmlDriver(__DIR__ . '/../../fixtures/metadata', TransferMetadata::class);
         
         $metadata = $ymlDriver->loadMetadataForClass(new ReflectionClass(MetadataStub::class));
         
@@ -17,6 +20,10 @@ class YmlDriverTest extends TestCase
         $this->assertEquals($metadata->propertyMetadata['email']->type, 'string');
         $this->assertEquals($metadata->propertyMetadata['id']->type, 'int');
         $this->assertEquals($metadata->propertyMetadata['additional']->type, 'int');
+        $this->assertEquals($metadata->id->name, 'id');
+        $this->assertArrayHasKey(Exclude::class, $metadata->propertyMetadata['additional']->annotations);
+        $this->assertArrayHasKey(BelongsTo::class, $metadata->propertyMetadata['belongs']->annotations);
+        $this->assertArrayHasKey(Exclude::class, $metadata->propertyMetadata['belongs']->annotations);
     }
 }
 
@@ -42,6 +49,11 @@ class MetadataStub
      */
     private $additional = 123;
     
+    /**
+     * @var MetadataStub
+     */
+    private $belongs;
+    
     public function getNome()
     {
         return $this->nome;
@@ -55,5 +67,15 @@ class MetadataStub
     public function getAdditional()
     {
         return $this->additional;
+    }
+    
+    public function getId()
+    {
+        return $this->id;
+    }
+
+    public function getBelongs(): MetadataStub
+    {
+        return $this->belongs;
     }
 }

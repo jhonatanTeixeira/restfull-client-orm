@@ -6,6 +6,7 @@ use Metadata\MetadataFactoryInterface;
 use RuntimeException;
 use Symfony\Component\Serializer\Normalizer\NormalizerInterface;
 use Vox\Data\Mapping\Bindings;
+use Vox\Data\Mapping\Exclude;
 use Vox\Metadata\ClassMetadata;
 use Vox\Metadata\PropertyMetadata;
 
@@ -36,6 +37,11 @@ class Normalizer implements NormalizerInterface
         foreach ($objectMetadata->propertyMetadata as $propertyMetadata) {
             $binding = $propertyMetadata->getAnnotation(Bindings::class);
             $value   = $propertyMetadata->getValue($object);
+            
+            if ($propertyMetadata->hasAnnotation(Exclude::class)
+                && $propertyMetadata->getAnnotation(Exclude::class)->output) {
+                continue;
+            }
             
             if (is_array($value) 
                 && (preg_match('/\[\]$/', $propertyMetadata->type) || $propertyMetadata->type == 'array')) {

@@ -10,6 +10,7 @@ use ReflectionProperty;
 use RuntimeException;
 use Symfony\Component\Yaml\Parser;
 use Vox\Data\Mapping\Bindings;
+use Vox\Data\Mapping\Exclude;
 use Vox\Metadata\ClassMetadata;
 use Vox\Metadata\PropertyMetadata;
 use Vox\Webservice\Mapping\BelongsTo;
@@ -78,6 +79,13 @@ class YmlDriver implements DriverInterface
                     $belongsTo = new BelongsTo();
                     $belongsTo->foreignField = $config['belongsTo']['foreignField'];
                     $annotations[BelongsTo::class] = $belongsTo;
+                }
+                
+                if (isset($config['exclude'])) {
+                    $exclude = new Exclude();
+                    $exclude->input  = $config['exlude']['input'] ?? true;
+                    $exclude->output = $config['exlude']['output'] ?? true;
+                    $annotations[Exclude::class] = $exclude;
                 }
             }
             
