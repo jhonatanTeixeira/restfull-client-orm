@@ -5,6 +5,11 @@ namespace Vox\Webservice;
 use InvalidArgumentException;
 use Metadata\MetadataFactoryInterface;
 
+/**
+ * A object storage using an id hashmap pattern
+ * 
+ * @author Jhonatan Teixeira <jhonatan.teixeira@gmail.com>
+ */
 class ObjectStorage implements ObjectStorageInterface
 {
     use MetadataTrait;

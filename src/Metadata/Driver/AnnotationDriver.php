@@ -12,6 +12,11 @@ use ReflectionClass;
 use Vox\Metadata\ClassMetadata;
 use Vox\Metadata\PropertyMetadata;
 
+/**
+ * Driver to create classes metadata using annotations, depends on doctrine's annotation reader
+ * 
+ * @author Jhonatan Teixeira <jhonatan.teixeira@gmail.com>
+ */
 class AnnotationDriver implements DriverInterface
 {
     use TypeFromSetterTrait;

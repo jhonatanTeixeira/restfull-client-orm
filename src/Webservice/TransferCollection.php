@@ -7,6 +7,11 @@ use Psr\Http\Message\ResponseInterface;
 use Symfony\Component\Serializer\Normalizer\DenormalizerInterface;
 use Vox\Webservice\Proxy\ProxyFactoryInterface;
 
+/**
+ * Transfer collection is used as a way to keep the objects inside the unity of work and proxyed
+ * 
+ * @author Jhonatan Teixeira <jhonatan.teixeira@gmail.com>
+ */
 class TransferCollection extends ArrayCollection
 {
     private $transferName;

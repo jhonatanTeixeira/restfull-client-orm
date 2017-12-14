@@ -7,6 +7,11 @@ use Metadata\ClassMetadata;
 use Metadata\MethodMetadata;
 use Metadata\PropertyMetadata;
 
+/**
+ * snipet to retreave a property type through it's setter type hint
+ * 
+ * @author Jhonatan Teixeira <jhonatan.teixeira@gmail.com>
+ */
 trait TypeFromSetterTrait
 {
     private function getTypeFromSetter(PropertyMetadata $propertyMetadata, ClassMetadata $classMetadata)

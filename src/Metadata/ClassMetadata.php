@@ -4,6 +4,11 @@ namespace Vox\Metadata;
 
 use Metadata\MergeableClassMetadata;
 
+/**
+ * Holds all metadata for a single class
+ * 
+ * @author Jhonatan Teixeira <jhonatan.teixeira@gmail.com>
+ */
 class ClassMetadata extends MergeableClassMetadata
 {
     use AnnotationsTrait;

@@ -2,6 +2,11 @@
 
 namespace Vox\Metadata;
 
+/**
+ * Trait to facilitate the annotations read from the metadata drivers
+ * 
+ * @author Jhonatan Teixeira <jhonatan.teixeira@gmail.com>
+ */
 trait AnnotationsTrait
 {
     public $annotations;

@@ -6,6 +6,11 @@ use Metadata\PropertyMetadata as BaseMetadata;
 use ProxyManager\Proxy\AccessInterceptorValueHolderInterface;
 use ReflectionClass;
 
+/**
+ * Holds all metadata for a single property
+ * 
+ * @author Jhonatan Teixeira <jhonatan.teixeira@gmail.com>
+ */
 class PropertyMetadata extends BaseMetadata
 {
     use AnnotationsTrait;

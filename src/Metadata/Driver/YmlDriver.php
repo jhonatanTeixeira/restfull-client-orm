@@ -17,6 +17,11 @@ use Vox\Webservice\Mapping\BelongsTo;
 use Vox\Webservice\Mapping\Id;
 use Vox\Webservice\Mapping\Resource;
 
+/**
+ * Yml driver to create a class metadata information
+ * 
+ * @author Jhonatan Teixeira <jhonatan.teixeira@gmail.com>
+ */
 class YmlDriver implements DriverInterface
 {
     private $ymlParser;

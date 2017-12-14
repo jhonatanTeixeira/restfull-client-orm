@@ -4,6 +4,9 @@ namespace Vox\Webservice;
 
 use IteratorAggregate;
 
+/**
+ * @author Jhonatan Teixeira <jhonatan.teixeira@gmail.com>
+ */
 interface ObjectStorageInterface extends IteratorAggregate
 {
     public function contains($object): bool;

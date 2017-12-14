@@ -8,6 +8,12 @@ use Metadata\MetadataFactoryInterface;
 use RuntimeException;
 use SplObjectStorage;
 
+/**
+ * the unit of work keeps track of the transfers current state, works as a sort of memento pattern
+ * its really important part of the persistence proccess
+ * 
+ * @author Jhonatan Teixeira <jhonatan.teixeira@gmail.com>
+ */
 class UnityOfWork implements UnityOfWorkInterface
 {
     use MetadataTrait;

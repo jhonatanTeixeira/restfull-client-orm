@@ -10,6 +10,11 @@ use Vox\Data\Mapping\Exclude;
 use Vox\Metadata\ClassMetadata;
 use Vox\Metadata\PropertyMetadata;
 
+/**
+ * A data normalized aimed to be used with symfony serializer component
+ * 
+ * @author Jhonatan Teixeira <jhonatan.teixeira@gmail.com>
+ */
 class Normalizer implements NormalizerInterface
 {
     /**

@@ -2,6 +2,9 @@
 
 namespace Vox\Webservice;
 
+/**
+ * @author Jhonatan Teixeira <jhonatan.teixeira@gmail.com>
+ */
 interface WebserviceClientInterface
 {
     public function cGet(string $transferName, array $filters = []): TransferCollection;

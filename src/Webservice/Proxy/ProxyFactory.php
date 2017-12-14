@@ -9,6 +9,11 @@ use Vox\Webservice\Mapping\BelongsTo;
 use Vox\Webservice\Metadata\TransferMetadata;
 use Vox\Webservice\TransferManagerInterface;
 
+/**
+ * a proxy factory for the transfers, it uses the ocramius proxy generator
+ * 
+ * @author Jhonatan Teixeira <jhonatan.teixeira@gmail.com>
+ */
 class ProxyFactory implements ProxyFactoryInterface
 {
     /**

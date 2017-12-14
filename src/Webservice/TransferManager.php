@@ -8,6 +8,13 @@ use Vox\Webservice\Metadata\TransferMetadata;
 use Vox\Webservice\Proxy\ProxyFactory;
 use Vox\Webservice\Proxy\ProxyFactoryInterface;
 
+/**
+ * This is the transfer manager, it is the best way for you to control the state of your transfers.
+ * this class is a facade to simplify the use of the unity of work and the repository pattern contained
+ * on this project
+ * 
+ * @author Jhonatan Teixeira <jhonatan.teixeira@gmail.com>
+ */
 class TransferManager implements TransferManagerInterface
 {
     /**

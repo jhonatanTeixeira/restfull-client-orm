@@ -6,6 +6,11 @@ use Metadata\MetadataFactoryInterface;
 use RuntimeException;
 use Vox\Webservice\Metadata\TransferMetadata;
 
+/**
+ * some metadata utilities
+ * 
+ * @author Jhonatan Teixeira <jhonatan.teixeira@gmail.com>
+ */
 trait MetadataTrait
 {
      /**

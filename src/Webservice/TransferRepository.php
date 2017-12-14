@@ -6,6 +6,12 @@ use Doctrine\Common\Collections\ArrayCollection;
 use Doctrine\Common\Persistence\ObjectRepository;
 use Vox\Webservice\Proxy\ProxyFactoryInterface;
 
+/**
+ * the transfer repository does the job of requiring data from the webservice client for the correct transfer
+ * however this pattern should be more flexible, a future release will fix this
+ * 
+ * @author Jhonatan Teixeira <jhonatan.teixeira@gmail.com>
+ */
 final class TransferRepository implements ObjectRepository
 {
     private $transferName;

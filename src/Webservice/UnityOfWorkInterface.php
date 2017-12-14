@@ -2,6 +2,9 @@
 
 namespace Vox\Webservice;
 
+/**
+ * @author Jhonatan Teixeira <jhonatan.teixeira@gmail.com>
+ */
 interface UnityOfWorkInterface extends ObjectStorageInterface
 {
     public function remove($object);

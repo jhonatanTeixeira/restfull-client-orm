@@ -6,6 +6,11 @@ use ReflectionClass;
 use Symfony\Component\Serializer\Normalizer\DenormalizerInterface;
 use Vox\Data\ObjectHydratorInterface;
 
+/**
+ * a data denormalizer aimed to be used with the symfony serializer component
+ * 
+ * @author Jhonatan Teixeira <jhonatan.teixeira@gmail.com>
+ */
 class Denormalizer implements DenormalizerInterface
 {
     /**

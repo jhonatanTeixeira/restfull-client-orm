@@ -11,6 +11,11 @@ use Symfony\Component\Serializer\SerializerInterface;
 use Vox\Webservice\Mapping\Resource;
 use Vox\Webservice\Metadata\TransferMetadata;
 
+/**
+ * the webservice client does the actual work of consuming and publishing data to the external webservices
+ * 
+ * @author Jhonatan Teixeira <jhonatan.teixeira@gmail.com>
+ */
 class WebserviceClient implements WebserviceClientInterface
 {
     /**

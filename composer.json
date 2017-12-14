@@ -1,6 +1,6 @@
 {
-    "name": "arquitetura/webservice-client",
-    "license": "proprietary",
+    "name": "vox/restfull-client-mapper",
+    "license": "MIT",
     "autoload": {
         "psr-4": {
             "Vox\\": "src/"

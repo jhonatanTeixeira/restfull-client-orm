@@ -8,6 +8,12 @@ use Symfony\Component\Serializer\NameConverter\NameConverterInterface;
 use Symfony\Component\Serializer\Normalizer\DenormalizerInterface;
 use Symfony\Component\Serializer\Normalizer\NormalizerInterface;
 
+/**
+ * this normalizer has the primary goal to aggregate the name converter functionality to the normalization
+ * its not optmized for performance though
+ * 
+ * @author Jhonatan Teixeira <jhonatan.teixeira@gmail.com>
+ */
 class ObjectNormalizer implements NormalizerInterface, DenormalizerInterface
 {
     /**

@@ -7,6 +7,12 @@ use ProxyManager\Proxy\AccessInterceptorValueHolderInterface;
 use Vox\Webservice\Mapping\BelongsTo;
 use Vox\Webservice\Metadata\TransferMetadata;
 
+/**
+ * The transfer persister will do the work of persisting and assuring the objects are on the
+ * correct state
+ * 
+ * @author Jhonatan Teixeira <jhonatan.teixeira@gmail.com>
+ */
 class TransferPersister implements TransferPersisterInterface
 {
     use MetadataTrait;

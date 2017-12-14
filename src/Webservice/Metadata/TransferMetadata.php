@@ -10,6 +10,11 @@ use Vox\Metadata\PropertyMetadata;
 use Vox\Webservice\Mapping\BelongsTo;
 use Vox\Webservice\Mapping\Id;
 
+/**
+ * Holds a single transfer metadata information
+ * 
+ * @author Jhonatan Teixeira <jhonatan.teixeira@gmail.com>
+ */
 class TransferMetadata extends ClassMetadata
 {
     /**

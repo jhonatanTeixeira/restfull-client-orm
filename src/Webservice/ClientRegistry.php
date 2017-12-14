@@ -5,6 +5,9 @@ namespace Vox\Webservice;
 use GuzzleHttp\ClientInterface;
 use RuntimeException;
 
+/**
+ * @author Jhonatan Teixeira <jhonatan.teixeira@gmail.com>
+ */
 class ClientRegistry implements ClientRegistryInterface
 {
     private $clients = [];
