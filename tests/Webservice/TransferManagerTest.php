@@ -344,20 +344,15 @@ class TransferManagerTest extends TestCase
 
     public function testShouldPostRelated()
     {
-        $related = new RelatedStub();
-        $relation = new RelationStub();
-        $relation->setName('ssss');
-        $related->setRelated($relation);
-        
-        $this->webserviceClient->expects($this->exactly(2))
-            ->method('post')
-            ->withConsecutive([$relation], [$related])
-            ->willReturnCallback(function ($transferName) {
-                $contents = $this->client->get('/abc')->getBody()->getContents();
-                return $this->serializer->denormalize(json_decode($contents, true), $transferName);
-            });
-        
         $this->mockHandler->append(
+            new Response(
+                200,
+                ['Content-Type' => 'application/json'],
+                json_encode([
+                    'id' => 2,
+                    'relation' => 5
+                ])
+            ),
             new Response(
                 200,
                 ['Content-Type' => 'application/json'],
@@ -373,12 +368,56 @@ class TransferManagerTest extends TestCase
                     'id' => 1,
                     'relation' => 10
                 ])
+            ),
+            new Response(
+                200,
+                ['Content-Type' => 'application/json'],
+                json_encode([
+                    'id' => 15,
+                    'name' => 'relation'
+                ])
+            ),
+            new Response(
+                200,
+                ['Content-Type' => 'application/json'],
+                json_encode([
+                    'id' => 2,
+                    'relation' => 15
+                ])
             )
         );
         
-        $this->transferManager->persist($related);
+        $newRelated1 = new RelatedStub();
+        $newRelation1 = new RelationStub();
+        $newRelation1->setName('ssss');
+        $newRelated1->setRelated($newRelation1);
+        
+        $relatedId2 = $this->transferManager->find(RelatedStub2::class, 2);
+        $this->assertEquals(5, $relatedId2->getRelationId());
+        $newRelation2 = new RelationStub();
+        $relatedId2->setRelation($newRelation2);
+
+        $this->webserviceClient->expects($this->exactly(3))
+            ->method('post')
+            ->withConsecutive([$newRelation1], [$newRelated1], [$newRelation2])
+            ->willReturnCallback(function ($transferName) {
+                $contents = $this->client->get('/abc')->getBody()->getContents();
+                return $this->serializer->denormalize(json_decode($contents, true), $transferName);
+            });
+        
+        $this->webserviceClient->expects($this->once())
+            ->method('put')
+            ->withConsecutive([$relatedId2])
+            ->willReturnCallback(function ($transfer) {
+                $contents = $this->client->get('/abc')->getBody()->getContents();
+                return $this->serializer->denormalize(json_decode($contents, true), $transfer);
+            });
+        
+        $this->transferManager->persist($newRelated1);
         
         $this->transferManager->flush();
+        
+        $this->assertEquals(15, $relatedId2->getRelationId());
     }
 }
 
@@ -539,5 +578,10 @@ class RelatedStub2
     public function getRelation(): RelationStub
     {
         return $this->relation;
+    }
+    
+    public function setRelation(RelationStub $relation)
+    {
+        $this->relation = $relation;
     }
 }
