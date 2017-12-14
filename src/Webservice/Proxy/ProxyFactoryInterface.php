@@ -8,4 +8,6 @@ use Vox\Webservice\TransferManagerInterface;
 interface ProxyFactoryInterface
 {
     public function createProxy($class, TransferManagerInterface $transferManager): AccessInterceptorValueHolderInterface;
+    
+    public function registerProxyAutoloader();
 }

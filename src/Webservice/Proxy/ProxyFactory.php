@@ -15,12 +15,18 @@ class ProxyFactory implements ProxyFactoryInterface
      * @var AccessInterceptorValueHolderFactory
      */
     private $accessInterceptorFactory;
+    
+    /**
+     * @var \ProxyManager\Configuration
+     */
+    private $proxyConfig;
 
-    public function __construct()
+    public function __construct(\ProxyManager\Configuration $proxyConfig = null)
     {
-        $this->accessInterceptorFactory = new AccessInterceptorValueHolderFactory();
+        $this->accessInterceptorFactory = new AccessInterceptorValueHolderFactory($proxyConfig);
+        $this->proxyConfig              = $proxyConfig;
     }
-
+    
     public function createProxy($class, TransferManagerInterface $transferManager): AccessInterceptorValueHolderInterface
     {
         $className = is_object($class) ? get_class($class) : $class;
@@ -62,5 +68,12 @@ class ProxyFactory implements ProxyFactoryInterface
                 }
             }
         };
+    }
+
+    public function registerProxyAutoloader()
+    {
+        if ($this->proxyConfig) {
+            spl_autoload_register($this->proxyConfig->getProxyAutoloader());
+        }
     }
 }

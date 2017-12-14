@@ -7,6 +7,7 @@ use Doctrine\Common\Annotations\Reader;
 use Metadata\ClassMetadata as BaseClassMetadata;
 use Metadata\Driver\DriverInterface;
 use Metadata\MethodMetadata;
+use ProxyManager\Proxy\AccessInterceptorValueHolderInterface;
 use ReflectionClass;
 use Vox\Metadata\ClassMetadata;
 use Vox\Metadata\PropertyMetadata;
@@ -36,6 +37,10 @@ class AnnotationDriver implements DriverInterface
     
     public function loadMetadataForClass(ReflectionClass $class): BaseClassMetadata
     {
+        if ($class->implementsInterface(AccessInterceptorValueHolderInterface::class)) {
+            $class = $class->getParentClass();
+        }
+
         /* @var $classMetadata ClassMetadata */
         $classMetadata    = (new ReflectionClass($this->classMetadataClassName))->newInstance($class->name);
         $classAnnotations = $this->annotationReader->getClassAnnotations($class);

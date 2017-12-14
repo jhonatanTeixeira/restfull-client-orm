@@ -37,11 +37,12 @@ class TransferManager implements TransferManagerInterface
     
     public function __construct(
         MetadataFactoryInterface $metadataFactory,
-        WebserviceClientInterface $webserviceClient
+        WebserviceClientInterface $webserviceClient,
+        ProxyFactoryInterface $proxyFactory = null
     ) {
-        $this->metadataFactory   = $metadataFactory;
-        $this->webserviceClient  = $webserviceClient;
-        $this->proxyFactory      = new ProxyFactory();
+        $this->metadataFactory  = $metadataFactory;
+        $this->webserviceClient = $webserviceClient;
+        $this->proxyFactory     = $proxyFactory ?? new ProxyFactory();
         
         $this->clear();
     }
