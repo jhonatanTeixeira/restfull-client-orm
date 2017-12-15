@@ -6,6 +6,8 @@ use ProxyManager\Factory\AccessInterceptorValueHolderFactory;
 use ProxyManager\Proxy\AccessInterceptorValueHolderInterface;
 use Vox\Metadata\PropertyMetadata;
 use Vox\Webservice\Mapping\BelongsTo;
+use Vox\Webservice\Mapping\HasMany;
+use Vox\Webservice\Mapping\HasOne;
 use Vox\Webservice\Metadata\TransferMetadata;
 use Vox\Webservice\TransferManagerInterface;
 
@@ -70,6 +72,20 @@ class ProxyFactory implements ProxyFactoryInterface
                         ->find($type, $metadata->propertyMetadata[$belongsTo->foreignField]->getValue($object));
 
                     $propertyMetadata->setValue($object, $data);
+                }
+
+                $hasOne = $propertyMetadata->getAnnotation(HasOne::class);
+
+                if ($hasOne instanceof HasOne) {
+                    $transferManager->getRepository($type)
+                        ->findOneBy([$hasOne->foreignField => $metadata->id->getValue($object)]);
+                }
+
+                $hasMany = $propertyMetadata->getAnnotation(HasMany::class);
+
+                if ($hasMany instanceof HasMany) {
+                    $transferManager->getRepository($type)
+                        ->findBy([$hasMany->foreignField => $metadata->id->getValue($object)]);
                 }
             }
         };
