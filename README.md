@@ -23,9 +23,9 @@ $registry->set('some_client', $guzzleClient);
 
 // instantiate a metadata factory, the second argument for the annotation driver
 // is a string with the metadata classes that will be created by the driver
-$metadataFactory = new MetadataFactory(
-	new Vox\Metadata\Driver\AnnotationDriver(
-    	new Doctrine\Common\Annotations\AnnotationReader(), 
+$metadataFactory = new Metadata\MetadataFactory(
+    new Vox\Metadata\Driver\AnnotationDriver(
+        new Doctrine\Common\Annotations\AnnotationReader(),
         Vox\Webservice\Metadata\TransferMetadata::class
     )
 );
@@ -85,27 +85,57 @@ class Stub
     private $relationId;
     
     /**
-     * does the relationship mapping, a existing field conyaining the id of the relation must be indicated
+     * does the belongs to relationship mapping, a existing field containing the id of the relation must be indicated
      *
      * @BelongsTo(foreignField = "relationId")
      * 
      * @var RelationStub
      */
-    private $relation;
+    private $belongs;
+    
+    /**
+     * does the has one relationship mapping, must indicate a field on the related class that will be matched against
+     * the value contained on the id of this class
+     *
+     * @HasOne(foreignField = "relatedId")
+     * 
+     * @var RelationStub
+     */
+    private $hasOne;
+
+    /**
+     * does the has many relationship mapping, must indicate a field on the related classes that will be matched against
+     * the value contained on the id of this class
+     *
+     * @HasMany(foreignField = "relatedId")
+     * 
+     * @var RelationStub
+     */
+    private $hasMany;
     
     public function getRelationId()
     {
         return $this->relationId;
     }
 
-    public function getRelation(): RelationStub
+    public function getBelongs(): RelationStub
     {
-        return $this->relation;
+        return $this->belongs;
     }
     
-    public function setRelation(RelationStub $relation)
+    public function setBlongs(RelationStub $relation)
     {
-        $this->relation = $relation;
+        $this->belongs = $relation;
+    }
+
+    public function getHasOne(): RelationStub
+    {
+        return $this->hasOne;
+    }
+    
+    public function getHasMany(): TransferCollection
+    {
+        return $this->hasMany;
     }
 }
 
@@ -162,4 +192,52 @@ $transferManager->persist($stub3);
 
 // flushes all changes, all posts, puts, etc. will happen here
 $transferManager->flush();
+```
+
+## 5. the yml driver
+
+if you want to leave the mapping metadata out of your object to keep it clean or keep it decoupled from this lib
+you can also use the yml metadata reader
+
+```php
+// the first argument is the path of where the yml files will be located, the second one is the metadata class to be used
+$metadataFactory = new Metadata\MetadataFactory(
+    new Vox\Metadata\Driver\YmlDriver(
+        '/project/metadata',
+        Vox\Webservice\Metadata\TransferMetadata::class
+    )
+);
+```
+
+### 5.1.1 - Yml mapping
+
+the yml mapping must be named after the complete class namespace replacing backslashes by dots. 
+Ex: /propject/metadata/Project.Package.ClassName.yml
+
+```yml
+resource: 
+    client: some_client
+    route: http://lorem-dolor.cc/some/route
+
+id: id
+
+parameters:
+    id:
+        bindings:
+            source: id
+    authorId:
+        bindings:
+            source: author_id
+    date:
+        bindings:
+            source: post_date
+    author:
+        belongsTo: 
+            foreignField: authorId
+    details:
+        hasOne:
+            foreignField: blogPostId
+    comments:
+        hasMany:
+            foreignField: blogPostId
 ```

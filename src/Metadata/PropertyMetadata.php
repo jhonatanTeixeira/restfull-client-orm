@@ -99,6 +99,13 @@ class PropertyMetadata extends BaseMetadata
         return [];
     }
     
+    public function getParsedType()
+    {
+        if (isset($this->type)) {
+            return preg_replace('/(\[\]$)|(\<\>$)/', '', $this->type);
+        }
+    }
+    
     public function serialize()
     {
         return serialize(array(

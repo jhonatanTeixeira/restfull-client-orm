@@ -14,6 +14,8 @@ use Vox\Data\Mapping\Exclude;
 use Vox\Metadata\ClassMetadata;
 use Vox\Metadata\PropertyMetadata;
 use Vox\Webservice\Mapping\BelongsTo;
+use Vox\Webservice\Mapping\HasMany;
+use Vox\Webservice\Mapping\HasOne;
 use Vox\Webservice\Mapping\Id;
 use Vox\Webservice\Mapping\Resource;
 
@@ -69,21 +71,33 @@ class YmlDriver implements DriverInterface
         foreach ($class->getProperties() as $reflectionProperty) {
             $annotations = [];
             $annotations[Bindings::class] = $bindings = new Bindings();
+            $name                         = $reflectionProperty->name;
+
+            if ($name == $yml['id'] ?? null) {
+                $annotations[Id::class] = new Id();
+            }
             
             if (isset($yml['parameters'][$reflectionProperty->name])) {
-                $name             = $reflectionProperty->name;
                 $config           = $yml['parameters'][$name];
                 $bindings->source = $config['bindings']['source'] ?? null;
                 $bindings->target = $config['bindings']['target'] ?? null;
 
-                if ($name == $yml['id'] ?? null) {
-                    $annotations[Id::class] = new Id();
-                }
-                
                 if (isset($config['belongsTo'])) {
                     $belongsTo = new BelongsTo();
                     $belongsTo->foreignField = $config['belongsTo']['foreignField'];
                     $annotations[BelongsTo::class] = $belongsTo;
+                }
+                
+                if (isset($config['hasOne'])) {
+                    $hasOne = new HasOne();
+                    $hasOne->foreignField = $config['hasOne']['foreignField'];
+                    $annotations[HasOne::class] = $hasOne;
+                }
+                
+                if (isset($config['hasMany'])) {
+                    $hasMany = new HasMany();
+                    $hasMany->foreignField = $config['hasMany']['foreignField'];
+                    $annotations[HasMany::class] = $hasMany;
                 }
                 
                 if (isset($config['exclude'])) {

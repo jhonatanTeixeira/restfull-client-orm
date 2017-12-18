@@ -2,6 +2,7 @@
 
 namespace Vox\Webservice\Proxy;
 
+use ProxyManager\Configuration;
 use ProxyManager\Factory\AccessInterceptorValueHolderFactory;
 use ProxyManager\Proxy\AccessInterceptorValueHolderInterface;
 use Vox\Metadata\PropertyMetadata;
@@ -24,11 +25,11 @@ class ProxyFactory implements ProxyFactoryInterface
     private $accessInterceptorFactory;
     
     /**
-     * @var \ProxyManager\Configuration
+     * @var Configuration
      */
     private $proxyConfig;
 
-    public function __construct(\ProxyManager\Configuration $proxyConfig = null)
+    public function __construct(Configuration $proxyConfig = null)
     {
         $this->accessInterceptorFactory = new AccessInterceptorValueHolderFactory($proxyConfig);
         $this->proxyConfig              = $proxyConfig;
@@ -62,33 +63,65 @@ class ProxyFactory implements ProxyFactoryInterface
         return function () use ($metadata, $name, $object, $transferManager) {
             /* @var $propertyMetadata PropertyMetadata */
             $propertyMetadata = $metadata->propertyMetadata[$name];
-            $type             = $propertyMetadata->type;
+            $type             = $propertyMetadata->getParsedType();
 
             if (class_exists($type)) {
-                $belongsTo = $propertyMetadata->getAnnotation(BelongsTo::class);
-
-                if ($belongsTo instanceof BelongsTo && empty($propertyMetadata->getValue($object))) {
-                    $data = $transferManager
-                        ->find($type, $metadata->propertyMetadata[$belongsTo->foreignField]->getValue($object));
-
-                    $propertyMetadata->setValue($object, $data);
-                }
-
-                $hasOne = $propertyMetadata->getAnnotation(HasOne::class);
-
-                if ($hasOne instanceof HasOne) {
-                    $transferManager->getRepository($type)
-                        ->findOneBy([$hasOne->foreignField => $metadata->id->getValue($object)]);
-                }
-
-                $hasMany = $propertyMetadata->getAnnotation(HasMany::class);
-
-                if ($hasMany instanceof HasMany) {
-                    $transferManager->getRepository($type)
-                        ->findBy([$hasMany->foreignField => $metadata->id->getValue($object)]);
-                }
+                $this->fetchBelongsTo($metadata, $propertyMetadata, $transferManager, $object, $type);
+                $this->fetchHasOne($metadata, $propertyMetadata, $transferManager, $object, $type);
+                $this->fetchHasMany($metadata, $propertyMetadata, $transferManager, $object, $type);
             }
         };
+    }
+    
+    private function fetchBelongsTo(
+        TransferMetadata $metadata,
+        PropertyMetadata $propertyMetadata,
+        TransferManagerInterface $transferManager,
+        $object,
+        string $type
+    ) {
+        $belongsTo = $propertyMetadata->getAnnotation(BelongsTo::class);
+        
+        if ($belongsTo instanceof BelongsTo && empty($propertyMetadata->getValue($object))) {
+            $data = $transferManager
+                ->find($type, $metadata->propertyMetadata[$belongsTo->foreignField]->getValue($object));
+
+            $propertyMetadata->setValue($object, $data);
+        }
+    }
+
+    private function fetchHasOne(
+        TransferMetadata $metadata,
+        PropertyMetadata $propertyMetadata,
+        TransferManagerInterface $transferManager,
+        $object,
+        string $type
+    ) {
+        $hasOne = $propertyMetadata->getAnnotation(HasOne::class);
+
+        if ($hasOne instanceof HasOne) {
+            $data = $transferManager->getRepository($type)
+                ->findOneBy([$hasOne->foreignField => $metadata->id->getValue($object)]);
+
+            $propertyMetadata->setValue($object, $data);
+        }
+    }
+
+    private function fetchHasMany(
+        TransferMetadata $metadata,
+        PropertyMetadata $propertyMetadata,
+        TransferManagerInterface $transferManager,
+        $object,
+        string $type
+    ) {
+        $hasMany = $propertyMetadata->getAnnotation(HasMany::class);
+
+        if ($hasMany instanceof HasMany) {
+            $data = $transferManager->getRepository($type)
+                ->findBy([$hasMany->foreignField => $metadata->id->getValue($object)]);
+
+            $propertyMetadata->setValue($object, $data);
+        }
     }
 
     public function registerProxyAutoloader()

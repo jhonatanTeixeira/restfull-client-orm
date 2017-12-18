@@ -1,0 +1,11 @@
+id: id
+parameters:
+    belongsTo:
+        belongsTo: 
+            foreignField: belongs
+    hasOne:
+        hasOne:
+            foreignField: one
+    hasMany:
+        hasMany:
+            foreignField: many
