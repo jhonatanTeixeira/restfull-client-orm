@@ -83,8 +83,14 @@ class ProxyFactory implements ProxyFactoryInterface
         $belongsTo = $propertyMetadata->getAnnotation(BelongsTo::class);
         
         if ($belongsTo instanceof BelongsTo && empty($propertyMetadata->getValue($object))) {
+            $idValue  = $metadata->propertyMetadata[$belongsTo->foreignField]->getValue($object);
+            
+            if (!$idValue) {
+                return;
+            }
+            
             $data = $transferManager
-                ->find($type, $metadata->propertyMetadata[$belongsTo->foreignField]->getValue($object));
+                ->find($type, $idValue);
 
             $propertyMetadata->setValue($object, $data);
         }
@@ -98,10 +104,11 @@ class ProxyFactory implements ProxyFactoryInterface
         string $type
     ) {
         $hasOne = $propertyMetadata->getAnnotation(HasOne::class);
-
-        if ($hasOne instanceof HasOne) {
+        $id     = $metadata->id->getValue($object);
+        
+        if ($hasOne instanceof HasOne && !empty($id)) {
             $data = $transferManager->getRepository($type)
-                ->findOneBy([$hasOne->foreignField => $metadata->id->getValue($object)]);
+                ->findOneBy([$hasOne->foreignField => $id]);
 
             $propertyMetadata->setValue($object, $data);
         }
@@ -115,8 +122,9 @@ class ProxyFactory implements ProxyFactoryInterface
         string $type
     ) {
         $hasMany = $propertyMetadata->getAnnotation(HasMany::class);
+        $id      = $metadata->id->getValue($object);
 
-        if ($hasMany instanceof HasMany) {
+        if ($hasMany instanceof HasMany && !empty($id)) {
             $data = $transferManager->getRepository($type)
                 ->findBy([$hasMany->foreignField => $metadata->id->getValue($object)]);
 

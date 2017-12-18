@@ -8,6 +8,8 @@ use Vox\Data\Mapping\Exclude;
 use Vox\Metadata\ClassMetadata;
 use Vox\Metadata\PropertyMetadata;
 use Vox\Webservice\Mapping\BelongsTo;
+use Vox\Webservice\Mapping\HasMany;
+use Vox\Webservice\Mapping\HasOne;
 use Vox\Webservice\Mapping\Id;
 
 /**
@@ -37,12 +39,14 @@ class TransferMetadata extends ClassMetadata
         
         parent::addPropertyMetadata($metadata);
         
-        if ($metadata->hasAnnotation(BelongsTo::class)) {
-            if (!$metadata->hasAnnotation(Exclude::class)) {
-                $metadata->annotations[Exclude::class] = new Exclude();
-                $metadata->annotations[Exclude::class]->output = false;
-            }
-            
+        if ($metadata->hasAnnotation(BelongsTo::class) && !$metadata->hasAnnotation(Exclude::class)) {
+            $metadata->annotations[Exclude::class] = new Exclude();
+            $metadata->annotations[Exclude::class]->output = false;
+        }
+        
+        if ($metadata->hasAnnotation(BelongsTo::class)
+            || $metadata->hasAnnotation(HasOne::class)
+            || $metadata->hasAnnotation(HasMany::class)) {
             $this->associations[$metadata->name] = $metadata;
         }
         

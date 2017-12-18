@@ -4,7 +4,11 @@ namespace Vox\Webservice;
 
 use Metadata\MetadataFactoryInterface;
 use ProxyManager\Proxy\AccessInterceptorValueHolderInterface;
+use Traversable;
+use Vox\Metadata\PropertyMetadata;
 use Vox\Webservice\Mapping\BelongsTo;
+use Vox\Webservice\Mapping\HasMany;
+use Vox\Webservice\Mapping\HasOne;
 use Vox\Webservice\Metadata\TransferMetadata;
 
 /**
@@ -54,26 +58,47 @@ class TransferPersister implements TransferPersisterInterface
         $metadata = $this->getClassMetadata($transfer);
         
         foreach ($metadata->associations as $name => $association) {
-            $assocTransfer = $association->getValue($transfer);
+            $assocValue = $association->getValue($transfer);
             
-            if (!$assocTransfer) {
+            if (!$assocValue) {
                 continue;
             }
             
-            $this->persistAssociation($object, $assocTransfer, $metadata, $association);
+            $this->persistAssociation($object, $assocValue, $metadata, $association);
         }
         
         $this->persistTransfer($object);
     }
     
-    private function persistAssociation($object, $association, TransferMetadata $metadata, \Vox\Metadata\PropertyMetadata $property)
+    private function persistAssociation($object, $association, TransferMetadata $metadata, PropertyMetadata $property)
     {
+        if (is_array($association) || $association instanceof Traversable) {
+            foreach ($association as $transfer) {
+                $this->persistAssociation($object, $transfer, $metadata, $property);
+            }
+        }
+        
         if (!$this->unityOfWork->isNew($association) && !$this->unityOfWork->isDirty($association)) {
             return;
         }
         
         $this->save($association);
         
+        if ($property->hasAnnotation(BelongsTo::class)) {
+            $this->persistBelongsTo($object, $association, $metadata, $property);
+        }
+        
+        if ($property->hasAnnotation(HasOne::class)) {
+            $this->persistHas($object, $association, $property, $property->getAnnotation(HasOne::class));
+        }
+        
+        if ($property->hasAnnotation(HasMany::class)) {
+            $this->persistHas($object, $association, $property, $property->getAnnotation(HasMany::class));
+        }
+    }
+    
+    private function persistBelongsTo($object, $association, TransferMetadata $metadata, PropertyMetadata $property)
+    {
         /* @var $belongsTo BelongsTo */
         $belongsTo       = $property->getAnnotation(BelongsTo::class);
         $foreignProperty = $metadata->propertyMetadata[$belongsTo->foreignField];
@@ -82,6 +107,19 @@ class TransferPersister implements TransferPersisterInterface
 
         if ($foreignId !== $currentId) {
             $foreignProperty->setValue($object, $currentId);
+        }
+    }
+    
+    private function persistHas($object, $association, PropertyMetadata $property, $annotation) 
+    {
+        $relationClassMetadata = $this->metadataFactory->getMetadataForClass($property->type);
+        $relationObject        = $property->getValue($object);
+        $foreignProperty       = $relationClassMetadata->propertyMetadata[$annotation->foreignField];
+        $foreignId             = $foreignProperty->getValue($relationObject);
+        $currentId             = $this->getIdValue($association);
+
+        if ($foreignId !== $currentId) {
+            $foreignProperty->setValue($relationObject, $currentId);
         }
     }
     
