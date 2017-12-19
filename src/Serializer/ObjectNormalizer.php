@@ -2,11 +2,12 @@
 
 namespace Vox\Serializer;
 
-use Symfony\Component\Serializer\Mapping\Factory\ClassMetadataFactoryInterface;
 use Symfony\Component\Serializer\NameConverter\CamelCaseToSnakeCaseNameConverter;
 use Symfony\Component\Serializer\NameConverter\NameConverterInterface;
 use Symfony\Component\Serializer\Normalizer\DenormalizerInterface;
 use Symfony\Component\Serializer\Normalizer\NormalizerInterface;
+use Symfony\Component\Serializer\SerializerAwareInterface;
+use Symfony\Component\Serializer\SerializerInterface;
 
 /**
  * this normalizer has the primary goal to aggregate the name converter functionality to the normalization
@@ -14,7 +15,7 @@ use Symfony\Component\Serializer\Normalizer\NormalizerInterface;
  * 
  * @author Jhonatan Teixeira <jhonatan.teixeira@gmail.com>
  */
-class ObjectNormalizer implements NormalizerInterface, DenormalizerInterface
+class ObjectNormalizer implements NormalizerInterface, DenormalizerInterface, SerializerAwareInterface
 {
     /**
      * @var Normalizer
@@ -30,13 +31,12 @@ class ObjectNormalizer implements NormalizerInterface, DenormalizerInterface
      * @var NameConverterInterface
      */
     private $nameConverter;
-    
+
     /**
-     * @param Normalizer $normalizer
-     * @param Denormalizer $denormalizer
-     * @param ClassMetadataFactoryInterface $classMetadataFactory
-     * @param NameConverterInterface $nameConverter
+     * @var SerializerInterface
      */
+    private $serializer;
+
     public function __construct(
         Normalizer $normalizer,
         Denormalizer $denormalizer,
@@ -90,5 +90,11 @@ class ObjectNormalizer implements NormalizerInterface, DenormalizerInterface
     public function supportsNormalization($data, $format = null): bool
     {
         return $this->normalizer->supportsNormalization($data, $format);
+    }
+
+    public function setSerializer(SerializerInterface $serializer)
+    {
+        $this->serializer = $serializer;
+        $this->normalizer->setNormalizer($serializer);
     }
 }

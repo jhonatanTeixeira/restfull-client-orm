@@ -6,6 +6,8 @@ use Doctrine\Common\Annotations\AnnotationReader;
 use Metadata\MetadataFactory;
 use PHPUnit\Framework\TestCase;
 use Symfony\Component\Serializer\NameConverter\CamelCaseToSnakeCaseNameConverter;
+use Symfony\Component\Serializer\Normalizer\DateTimeNormalizer;
+use Symfony\Component\Serializer\Serializer;
 use Vox\Data\ObjectHydrator;
 use Vox\Metadata\Driver\AnnotationDriver;
 
@@ -16,6 +18,8 @@ class ObjectNormalizerTest extends TestCase
     private $denormalizer;
     
     private $objectNormalizer;
+
+    private $serializer;
     
     protected function setUp()
     {
@@ -30,6 +34,11 @@ class ObjectNormalizerTest extends TestCase
             null,
             new CamelCaseToSnakeCaseNameConverter()
         );
+
+        $this->serializer = new Serializer([
+            $this->objectNormalizer,
+            new DateTimeNormalizer('Y-m-d H:i:s')
+        ]);
     }
     
     public function testShouldNormalizeComplexType()
@@ -37,6 +46,7 @@ class ObjectNormalizerTest extends TestCase
         $compare = [
             'name' => 'abcd',
             'type' => SomeOne::class,
+            'date' => date('Y-m-d H:i:s'),
             'other' => [
                 'type' => OtherTwo::class,
                 'name' => 'abcdfg',
@@ -47,7 +57,7 @@ class ObjectNormalizerTest extends TestCase
             ]
         ];
         
-        $normalized = $this->objectNormalizer->normalize(new SomeOne());
+        $normalized = $this->serializer->normalize(new SomeOne());
         
         $this->assertEquals($compare, $normalized);
     }
@@ -88,11 +98,17 @@ class SomeOne
      * @var OtherTwo
      */
     private $otherTwo;
+
+    /**
+     * @var \DateTime
+     */
+    private $date;
     
     public function __construct()
     {
         $this->other = new OtherTwo();
         $this->otherTwo = new OtherTwo();
+        $this->date = new \DateTime();
     }
     
     public function getName()
