@@ -73,7 +73,7 @@ class YmlDriver implements DriverInterface
             $annotations[Bindings::class] = $bindings = new Bindings();
             $name                         = $reflectionProperty->name;
 
-            if ($name == $yml['id'] ?? null) {
+            if ($name == ($yml['id'] ?? null)) {
                 $annotations[Id::class] = new Id();
             }
             
@@ -143,7 +143,8 @@ class YmlDriver implements DriverInterface
         if (is_file($path)) {
             return $this->ymlParser->parse(file_get_contents($path));
         }
-        
+
+        return [];
         throw new RuntimeException("metadata file not found for class $className");
     }
 }
