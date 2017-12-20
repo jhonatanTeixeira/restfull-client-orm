@@ -2,6 +2,7 @@
 
 namespace Vox\Webservice;
 
+use Doctrine\Common\Collections\Collection;
 use Metadata\MetadataFactoryInterface;
 use ProxyManager\Proxy\AccessInterceptorValueHolderInterface;
 use Traversable;
@@ -72,10 +73,12 @@ class TransferPersister implements TransferPersisterInterface
     
     private function persistAssociation($object, $association, TransferMetadata $metadata, PropertyMetadata $property)
     {
-        if (is_array($association) || $association instanceof Traversable) {
+        if (is_array($association) || $association instanceof Traversable || $association instanceof Collection) {
             foreach ($association as $transfer) {
                 $this->persistAssociation($object, $transfer, $metadata, $property);
             }
+
+            return;
         }
         
         if (!$this->unityOfWork->isNew($association) && !$this->unityOfWork->isDirty($association)) {
@@ -112,14 +115,29 @@ class TransferPersister implements TransferPersisterInterface
     
     private function persistHas($object, $association, PropertyMetadata $property, $annotation) 
     {
-        $relationClassMetadata = $this->metadataFactory->getMetadataForClass($property->type);
+        $type                  = preg_replace('/\[\]$/', '', $property->type);
+        $relationClassMetadata = $this->metadataFactory->getMetadataForClass($type);
         $relationObject        = $property->getValue($object);
         $foreignProperty       = $relationClassMetadata->propertyMetadata[$annotation->foreignField];
-        $foreignId             = $foreignProperty->getValue($relationObject);
-        $currentId             = $this->getIdValue($association);
 
-        if ($foreignId !== $currentId) {
-            $foreignProperty->setValue($relationObject, $currentId);
+        if ($relationObject instanceof Traversable || is_array($relationObject)) {
+            foreach ($relationObject as $relationItem) {
+                $this->setIdValueOnAssociation($object, $relationItem, $foreignProperty);
+            }
+
+            return;
+        }
+
+        $this->setIdValueOnAssociation($object, $association, $foreignProperty);
+    }
+
+    private function setIdValueOnAssociation($object, $association, PropertyMetadata $foreignProperty)
+    {
+        $assocId  = $foreignProperty->getValue($association);
+        $objectId = $this->getIdValue($object);
+
+        if ($assocId !== $objectId) {
+            $foreignProperty->setValue($association, $objectId);
         }
     }
     

@@ -3,6 +3,8 @@
 namespace Vox\Webservice;
 
 use Doctrine\Common\Annotations\AnnotationReader;
+use Doctrine\Common\Collections\ArrayCollection;
+use Doctrine\Common\Collections\Collection;
 use Doctrine\Common\Persistence\ObjectRepository;
 use Metadata\MetadataFactory;
 use PHPUnit\Framework\TestCase;
@@ -109,6 +111,46 @@ class TransferManagerRelationshipsTest extends TestCase
         $stub->getHasOne();
         $stub->getHasMany();
     }
+
+    public function testShouldPersistRelationships()
+    {
+        $stub = new RelationshipsStub(null);
+
+        $stub->setBelongsTo(new RelationshipsStub(null));
+        $stub->setHasOne(new RelationshipsStub(null));
+        $stub->setHasMany(new ArrayCollection([
+            new RelationshipsStub(null),
+            new RelationshipsStub(null),
+            new RelationshipsStub(null),
+        ]));
+
+        $metadataFactory = new MetadataFactory(
+            new AnnotationDriver(
+                new AnnotationReader(),
+                TransferMetadata::class
+            )
+        );
+
+        $id = 0;
+
+        $webserviceClient = $this->createMock(WebserviceClient::class);
+        $webserviceClient->expects($this->exactly(6))
+            ->method('post')
+            ->willReturnCallback(function ($entity) use (&$id) {
+                $entity->setId(++$id);
+            });
+        ;
+
+        $transferManager = $this->getMockBuilder(TransferManager::class)
+            ->setConstructorArgs([$metadataFactory, $webserviceClient])
+            ->setMethods(['getRepository'])
+            ->getMock()
+        ;
+
+        $transferManager->persist($stub);
+
+        $transferManager->flush();
+    }
 }
 
 
@@ -156,7 +198,12 @@ class RelationshipsStub
      * @var RelationshipsStub[]
      */
     private $hasMany;
-    
+
+    public function __construct($id = 1)
+    {
+        $this->id = $id;
+    }
+
     public function getId()
     {
         return $this->id;
@@ -190,6 +237,37 @@ class RelationshipsStub
     public function getHasMany(): array
     {
         return $this->hasMany;
+    }
+
+    public function setBelongsTo(RelationshipsStub $belongsTo)
+    {
+        $this->belongsTo = $belongsTo;
+
+        return $this;
+    }
+
+    public function setHasOne(RelationshipsStub $hasOne)
+    {
+        $this->hasOne = $hasOne;
+
+        return $this;
+    }
+
+    public function setHasMany(Collection $hasMany)
+    {
+        $this->hasMany = $hasMany;
+
+        return $this;
+    }
+
+    public function setBelongs(int $belongs)
+    {
+        $this->belongs = $belongs;
+    }
+
+    public function setId(int $id)
+    {
+        $this->id = $id;
     }
 }
 
