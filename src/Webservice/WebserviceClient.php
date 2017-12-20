@@ -13,7 +13,7 @@ use Vox\Webservice\Metadata\TransferMetadata;
 
 /**
  * the webservice client does the actual work of consuming and publishing data to the external webservices
- * 
+ *
  * @author Jhonatan Teixeira <jhonatan.teixeira@gmail.com>
  */
 class WebserviceClient implements WebserviceClientInterface
@@ -22,26 +22,26 @@ class WebserviceClient implements WebserviceClientInterface
      * @var ClientRegistryInterface
      */
     private $clientRegistry;
-    
+
     /**
      * @var MetadataFactoryInterface
      */
     private $metadataFactory;
-    
+
     /**
      * @var DenormalizerInterface
      */
     private $denormalizer;
-    
+
     /**
      * @var SerializerInterface
      */
     private $serializer;
-    
+
     public function __construct(
-        ClientRegistryInterface $clientRegistry, 
-        MetadataFactoryInterface $metadataFactory, 
-        DenormalizerInterface $denormalizer, 
+        ClientRegistryInterface $clientRegistry,
+        MetadataFactoryInterface $metadataFactory,
+        DenormalizerInterface $denormalizer,
         SerializerInterface $serializer
     ) {
         $this->clientRegistry  = $clientRegistry;
@@ -49,12 +49,22 @@ class WebserviceClient implements WebserviceClientInterface
         $this->denormalizer    = $denormalizer;
         $this->serializer      = $serializer;
     }
-    
+
     public function cGet(string $transferName, array $filters = []): TransferCollection
     {
         $resource = $this->getResource($transferName);
         $client   = $this->getClient($transferName);
-        $response = $client->request('GET', $resource->route);
+        $options  = ['headers' => ['Content-Type' => 'application/json']];
+
+        if (!empty($filters)) {
+            $options['query'] = $filters;
+        }
+
+        $response = $client->request('GET', $resource->route, $options);
+
+        if ($response->getStatusCode() >= 300) {
+            throw new Exception($response->getReasonPhrase());
+        }
 
         return new TransferCollection($transferName, $this->denormalizer, $response);
     }
@@ -76,9 +86,14 @@ class WebserviceClient implements WebserviceClientInterface
         $resource = $this->getResource($transferName);
         $client   = $this->getClient($transferName);
         $route    = sprintf('%s/%s', $resource->route, $id);
-        $response = $client->request('GET', $route);
+        $response = $client->request('GET', $route, ['headers' => ['Content-Type' => 'application/json']]);
+
+        if ($response->getStatusCode() >= 300) {
+            throw new Exception($response->getReasonPhrase());
+        }
+
         $contents = $response->getBody()->getContents();
-        
+
         if ($contents) {
             return $this->denormalizer->denormalize(json_decode($contents, true), $transferName);
         }
@@ -87,15 +102,15 @@ class WebserviceClient implements WebserviceClientInterface
     public function post($transfer)
     {
         $data = $this->serializer->serialize($transfer, 'json');
-        
+
         $resource = $this->getResource(get_class($transfer));
         $client   = $this->getClient(get_class($transfer));
         $response = $client->request('POST', $resource->route, ['json' => $data]);
-        
+
         if ($response->getStatusCode() >= 300) {
             throw new Exception($response->getReasonPhrase());
         }
-        
+
         $contents = $response->getBody()->getContents();
         $this->denormalizer->denormalize(json_decode($contents, true), $transfer);
     }
@@ -106,35 +121,35 @@ class WebserviceClient implements WebserviceClientInterface
         $metadata = $this->getMetadata(get_class($transfer));
         $resource = $this->getResource(get_class($transfer));
         $client   = $this->getClient(get_class($transfer));
-        
+
         if (empty($metadata->id)) {
             throw new RuntimeException('no id mapped for class ' . get_class($transfer));
         }
-        
+
         $route    = sprintf('%s/%s', $resource->route, $metadata->id->getValue($transfer));
         $response = $client->request('PUT', $route, ['json' => $data]);
-        
+
         if ($response->getStatusCode() >= 300) {
             throw new Exception($response->getReasonPhrase());
         }
-        
+
         $this->denormalizer->denormalize(json_decode($response->getBody()->getContents(), true), $transfer);
     }
-    
+
     private function getClient(string $transferName, Resource $resource = null): ClientInterface
     {
         if (null === $resource) {
             $resource = $this->getResource($transferName);
         }
-        
+
         return  $this->clientRegistry->get($resource->client);
     }
-    
+
     private function getResource(string $transferName): Resource
     {
         return $this->getMetadata($transferName)->getAnnotation(Resource::class, true);
     }
-    
+
     private function getMetadata(string $transferName): TransferMetadata
     {
         return $this->metadataFactory->getMetadataForClass($transferName);
