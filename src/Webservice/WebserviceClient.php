@@ -7,6 +7,7 @@ use GuzzleHttp\ClientInterface;
 use Metadata\MetadataFactoryInterface;
 use RuntimeException;
 use Symfony\Component\Serializer\Normalizer\DenormalizerInterface;
+use Symfony\Component\Serializer\Normalizer\NormalizerInterface;
 use Symfony\Component\Serializer\SerializerInterface;
 use Vox\Webservice\Mapping\Resource;
 use Vox\Webservice\Metadata\TransferMetadata;
@@ -34,20 +35,20 @@ class WebserviceClient implements WebserviceClientInterface
     private $denormalizer;
 
     /**
-     * @var SerializerInterface
+     * @var NormalizerInterface
      */
-    private $serializer;
+    private $normalizer;
 
     public function __construct(
         ClientRegistryInterface $clientRegistry,
         MetadataFactoryInterface $metadataFactory,
         DenormalizerInterface $denormalizer,
-        SerializerInterface $serializer
+        NormalizerInterface $normalizer
     ) {
         $this->clientRegistry  = $clientRegistry;
         $this->metadataFactory = $metadataFactory;
         $this->denormalizer    = $denormalizer;
-        $this->serializer      = $serializer;
+        $this->normalizer      = $normalizer;
     }
 
     public function cGet(string $transferName, array $filters = []): TransferCollection
@@ -101,7 +102,7 @@ class WebserviceClient implements WebserviceClientInterface
 
     public function post($transfer)
     {
-        $data = $this->serializer->serialize($transfer, 'json');
+        $data = $this->normalizer->normalize($transfer, 'json');
 
         $resource = $this->getResource(get_class($transfer));
         $client   = $this->getClient(get_class($transfer));
@@ -117,7 +118,7 @@ class WebserviceClient implements WebserviceClientInterface
 
     public function put($transfer)
     {
-        $data     = $this->serializer->serialize($transfer, 'json');
+        $data     = $this->normalizer->normalize($transfer, 'json');
         $metadata = $this->getMetadata(get_class($transfer));
         $resource = $this->getResource(get_class($transfer));
         $client   = $this->getClient(get_class($transfer));

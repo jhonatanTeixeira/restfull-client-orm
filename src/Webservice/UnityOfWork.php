@@ -5,7 +5,6 @@ namespace Vox\Webservice;
 use AppendIterator;
 use BadMethodCallException;
 use Metadata\MetadataFactoryInterface;
-use RuntimeException;
 use SplObjectStorage;
 
 /**
@@ -90,7 +89,7 @@ class UnityOfWork implements UnityOfWorkInterface
     public function remove($object)
     {
         if (!$this->contains($object)) {
-            throw new \RuntimeException('object ' . get_class($object) . 'is not managed');
+            throw new \RuntimeException('object ' . get_class($object) . ' is not managed');
         }
         
         if (!$this->removedObjects->contains($object)) {
@@ -137,5 +136,16 @@ class UnityOfWork implements UnityOfWorkInterface
     public function isRemoved($object): bool
     {
         return $this->removedObjects->contains($object);
+    }
+
+    /**
+     * @param string $className
+     * @param scalar $id
+     *
+     * @return object
+     */
+    public function fetchByParams(...$params)
+    {
+        return $this->data->fetchByParams(...$params);
     }
 }

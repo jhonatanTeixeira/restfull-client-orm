@@ -5,6 +5,7 @@ namespace Vox\Webservice;
 use DateTime;
 use Doctrine\Common\Annotations\AnnotationReader;
 use GuzzleHttp\Client;
+use GuzzleHttp\ClientInterface;
 use GuzzleHttp\Handler\MockHandler;
 use GuzzleHttp\HandlerStack;
 use GuzzleHttp\Psr7\Response;
@@ -228,6 +229,77 @@ class WebserviceClientTest extends TestCase
         $this->assertEquals('lorem', $result->getNome());
         $this->assertEquals('ipsum', $result->getEmail());
     }
+
+    public function testOperations()
+    {
+        $client = $this->createMock(ClientInterface::class);
+
+        $clientRegistry = $this->createMock(ClientRegistryInterface::class);
+        $clientRegistry->expects($this->exactly(5))
+            ->method('get')
+            ->willReturn($client)
+        ;
+
+        $client->expects($this->exactly(5))
+            ->method('request')
+            ->withConsecutive(
+                ['POST', '/test', ['json' => ['id' => null, 'name' => 'a', 'e_mail' => 'b']]],
+                ['PUT', '/test/1', ['json' => ['id' => 1, 'name' => 'a', 'e_mail' => 'b']]],
+                ['GET', '/test/1', ['headers' => ['Content-Type' => 'application/json']]],
+                ['GET', '/test', ['headers' => ['Content-Type' => 'application/json']]],
+                ['GET', '/test', ['headers' => ['Content-Type' => 'application/json'], 'query' => ['nome' => 'a']]]
+            )
+            ->willReturn(
+                new Response(
+                    201,
+                    ['Content-Type' => 'application/json'],
+                    json_encode(['id' => 1, 'name' => 'a', 'e_mail' => 'b'])
+                ),
+                new Response(
+                    201,
+                    ['Content-Type' => 'application/json'],
+                    json_encode(['id' => 1, 'name' => 'a', 'e_mail' => 'b'])
+                ),
+                new Response(
+                    200,
+                    ['Content-Type' => 'application/json'],
+                    json_encode(['id' => 1, 'name' => 'a', 'e_mail' => 'b'])
+                ),
+                new Response(
+                    200,
+                    ['Content-Type' => 'application/json'],
+                    json_encode([['id' => 1, 'name' => 'a', 'e_mail' => 'b']])
+                ),
+                new Response(
+                    200,
+                    ['Content-Type' => 'application/json'],
+                    json_encode([['id' => 1, 'name' => 'a', 'e_mail' => 'b']])
+                )
+            )
+        ;
+
+        $metadataFactory = new MetadataFactory(new YmlDriver(__DIR__ . '/../fixtures/metadata', TransferMetadata::class));
+        $serializer = new Serializer(
+            [
+                new Normalizer($metadataFactory),
+                new Denormalizer(new ObjectHydrator($metadataFactory))
+            ],
+            [
+                new JsonEncoder()
+            ]
+        );
+
+        $webserviceClient = new WebserviceClient($clientRegistry, $metadataFactory, $serializer, $serializer);
+
+        $transferPost = new YmlStub(null, 'a', 'b');
+        $transferPut = new YmlStub(1, 'a', 'b');
+
+        $webserviceClient->post($transferPost);
+        $webserviceClient->put($transferPut);
+        $webserviceClient->get(YmlStub::class, 1);
+        $webserviceClient->cGet(YmlStub::class);
+        $webserviceClient->cGet(YmlStub::class, ['nome' => 'a']);
+    }
 }
 
 /**
@@ -327,7 +399,14 @@ class YmlStub
      * @var string
      */
     private $email;
-    
+
+    public function __construct(int $id = null, string $nome = null, string $email = null)
+    {
+        $this->id = $id;
+        $this->nome = $nome;
+        $this->email = $email;
+    }
+
     public function getId()
     {
         return $this->id;

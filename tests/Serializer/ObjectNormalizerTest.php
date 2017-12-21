@@ -45,14 +45,11 @@ class ObjectNormalizerTest extends TestCase
     {
         $compare = [
             'name' => 'abcd',
-            'type' => SomeOne::class,
             'date' => date('Y-m-d H:i:s'),
             'other' => [
-                'type' => OtherTwo::class,
                 'name' => 'abcdfg',
             ],
             'other_two' => [
-                'type' => OtherTwo::class,
                 'name' => 'abcdfg',
             ]
         ];
@@ -66,7 +63,6 @@ class ObjectNormalizerTest extends TestCase
     {
         $data = [
             'name' => 'abcd',
-            'type' => SomeOne::class,
             'other' => [
                 'type' => OtherTwo::class,
                 'name' => 'abcdfgh',

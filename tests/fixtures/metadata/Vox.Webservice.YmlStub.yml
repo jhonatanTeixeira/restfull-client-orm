@@ -1,6 +1,6 @@
 resource: 
     client: some_client
-    route: http://lorem-dolor.cc/some/route
+    route: /test
 id: id
 parameters:
     id:

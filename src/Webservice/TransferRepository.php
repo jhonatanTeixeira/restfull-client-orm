@@ -59,8 +59,9 @@ final class TransferRepository implements ObjectRepository
     
     public function find($id)
     {
-        $transfer = $this->proxyFactory
-            ->createProxy($this->webserviceClient->get($this->transferName, $id), $this->transferManager);
+        $transfer = $this->objectStorage->fetchByParams($this->transferName, $id)
+            ?? $this->proxyFactory
+                ->createProxy($this->webserviceClient->get($this->transferName, $id), $this->transferManager);
         
         if ($transfer && !$this->objectStorage->contains($transfer)) {
             $this->objectStorage->attach($transfer);

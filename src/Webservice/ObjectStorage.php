@@ -4,6 +4,7 @@ namespace Vox\Webservice;
 
 use InvalidArgumentException;
 use Metadata\MetadataFactoryInterface;
+use BadMethodCallException;
 
 /**
  * A object storage using an id hashmap pattern
@@ -59,5 +60,27 @@ class ObjectStorage implements ObjectStorageInterface
     public function isEquals($object): bool
     {
         return $object == $this->storage[get_class($object)][$this->getIdValue($object)];
+    }
+
+    /**
+     * @param string $className
+     * @param scalar $id
+     *
+     * @return object
+     */
+    public function fetchByParams(...$params)
+    {
+        if (count($params) != 2) {
+            throw new BadMethodCallException('this method needs two params, $className: string, $id: scalar');
+        }
+
+        $className = (string) $params[0];
+        $id        = $params[1];
+
+        if (!is_scalar($id)) {
+            throw new BadMethodCallException('$id must be scalar value');
+        }
+
+        return $this->storage[$className][$id] ?? null;
     }
 }

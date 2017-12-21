@@ -14,11 +14,9 @@ class NormalizerTest extends TestCase
     {
         $compare = [
             'name' => 'abcd',
-            'type' => Some::class,
             'othersArray' => null,
             'othersArray2' => null,
             'other' => [
-                'type' => Other::class,
                 'name' => 'abcdfg',
                 'last_name' => 'efg'
             ]
@@ -35,7 +33,6 @@ class NormalizerTest extends TestCase
     {
         $compare = [
             'name' => 'abcd',
-            'type' => Some::class,
             'othersArray' => [
                 [
                     'name' => 'aaaa'
@@ -46,16 +43,13 @@ class NormalizerTest extends TestCase
             ],
             'othersArray2' => [
                 [
-                    'type' => Other::class,
                     'name' => 'abcdfg',
                 ],
                 [
-                    'type' => Other::class,
                     'name' => 'abcdfg'
                 ],
             ],
             'other' => [
-                'type' => Other::class,
                 'name' => 'abcdfg',
                 'last_name' => 'efg'
             ]
@@ -80,6 +74,27 @@ class NormalizerTest extends TestCase
         
         $normalized = $normalizer->normalize($some);
         
+        $this->assertEquals($normalized, $compare);
+    }
+
+    public function shouldNormalizeExtension()
+    {
+        $compare = [
+            'name' => 'abcd',
+            'type' => SomeExtension::class,
+            'othersArray' => null,
+            'othersArray2' => null,
+            'otherName' => 'other-name',
+            'other' => [
+                'name' => 'abcdfg',
+                'last_name' => 'efg'
+            ]
+        ];
+
+        $normalizer = new Normalizer(new MetadataFactory(new AnnotationDriver(new AnnotationReader())));
+
+        $normalized = $normalizer->normalize(new SomeExtension());
+
         $this->assertEquals($normalized, $compare);
     }
 }
@@ -129,4 +144,9 @@ class Some
 class Other
 {
     private $name = 'abcdfg';
+}
+
+class SomeExtension extends Some
+{
+    private $otherName = 'other-name';
 }

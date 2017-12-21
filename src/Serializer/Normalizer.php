@@ -59,7 +59,10 @@ class Normalizer implements NormalizerInterface, NormalizerAwareInterface
         }
 
         $data = [];
-        $data['type'] = get_class($object);
+
+        if ($objectMetadata->reflection->getParentClass()) {
+            $data['type'] = get_class($object);
+        }
 
         /* @var $propertyMetadata PropertyMetadata */
         foreach ($objectMetadata->propertyMetadata as $propertyMetadata) {

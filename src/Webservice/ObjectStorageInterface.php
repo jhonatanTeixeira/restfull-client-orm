@@ -16,4 +16,6 @@ interface ObjectStorageInterface extends IteratorAggregate
     public function detach($object);
     
     public function isEquals($object): bool;
+
+    public function fetchByParams(...$params);
 }
