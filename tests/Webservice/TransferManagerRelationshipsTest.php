@@ -38,9 +38,12 @@ class TransferManagerRelationshipsTest extends TestCase
             ->willReturn($responseStub = $proxyFactory->createProxy(new RelationshipsStub(), $transferManager))
         ;
         
-        $repository->expects($this->once())
+        $repository->expects($this->exactly(2))
             ->method('findOneBy')
-            ->with(['one' => 1])
+            ->withConsecutive(
+                [['one' => 1]],
+                [['multiOne' => 1, 'multiTwo' => 1]]
+            )
             ->willReturn($responseStub)
         ;
         
@@ -49,8 +52,8 @@ class TransferManagerRelationshipsTest extends TestCase
             ->with(['many' => 1])
             ->willReturn([$responseStub, $responseStub, $responseStub])
         ;
-        
-        $transferManager->expects($this->exactly(4))
+
+        $transferManager->expects($this->exactly(5))
             ->method('getRepository')
             ->with(RelationshipsStub::class)
             ->willReturn($repository);
@@ -61,6 +64,7 @@ class TransferManagerRelationshipsTest extends TestCase
         $stub->getBelongsTo();
         $stub->getHasOne();
         $stub->getHasMany();
+        $stub->getBelongsMulti();
     }
 
     public function testShouldGetRelationshipsFromYml()
@@ -86,10 +90,13 @@ class TransferManagerRelationshipsTest extends TestCase
             ->with(1)
             ->willReturn($responseStub = $proxyFactory->createProxy(new RelationshipsStubYml(), $transferManager))
         ;
-        
-        $repository->expects($this->once())
+
+        $repository->expects($this->exactly(2))
             ->method('findOneBy')
-            ->with(['one' => 1])
+            ->withConsecutive(
+                [['one' => 1]],
+                [['multiOne' => 1, 'multiTwo' => 1]]
+            )
             ->willReturn($responseStub)
         ;
         
@@ -99,7 +106,7 @@ class TransferManagerRelationshipsTest extends TestCase
             ->willReturn([$responseStub, $responseStub, $responseStub])
         ;
         
-        $transferManager->expects($this->exactly(4))
+        $transferManager->expects($this->exactly(5))
             ->method('getRepository')
             ->with(RelationshipsStubYml::class)
             ->willReturn($repository);
@@ -110,6 +117,7 @@ class TransferManagerRelationshipsTest extends TestCase
         $stub->getBelongsTo();
         $stub->getHasOne();
         $stub->getHasMany();
+        $stub->getBelongsMulti();
     }
 
     public function testShouldPersistRelationships()
@@ -177,6 +185,16 @@ class RelationshipsStub
      * @var int
      */
     private $many = 1;
+
+    /**
+     * @var int
+     */
+    private $multiOne = 1;
+
+    /**
+     * @var int
+     */
+    private $multiTwo = 1;
     
     /**
      * @BelongsTo(foreignField = "belongs")
@@ -198,6 +216,13 @@ class RelationshipsStub
      * @var RelationshipsStub[]
      */
     private $hasMany;
+
+    /**
+     * @BelongsTo(foreignField={"multiOne", "multiTwo"})
+     *
+     * @var RelationshipsStub
+     */
+    private $belongsMulti;
 
     public function __construct($id = 1)
     {
@@ -269,6 +294,11 @@ class RelationshipsStub
     {
         $this->id = $id;
     }
+
+    public function getBelongsMulti(): RelationshipsStub
+    {
+        return $this->belongsMulti;
+    }
 }
 
 class RelationshipsStubYml
@@ -292,7 +322,18 @@ class RelationshipsStubYml
      * @var int
      */
     private $many = 1;
-    
+
+
+    /**
+     * @var int
+     */
+    private $multiOne = 1;
+
+    /**
+     * @var int
+     */
+    private $multiTwo = 1;
+
     /**
      * @var RelationshipsStubYml
      */
@@ -307,7 +348,12 @@ class RelationshipsStubYml
      * @var RelationshipsStubYml[]
      */
     private $hasMany;
-    
+
+    /**
+     * @var RelationshipsStubYml
+     */
+    private $belongsMulti;
+
     public function getId()
     {
         return $this->id;
@@ -341,5 +387,10 @@ class RelationshipsStubYml
     public function getHasMany(): array
     {
         return $this->hasMany;
+    }
+
+    public function getBelongsMulti(): RelationshipsStubYml
+    {
+        return $this->belongsMulti;
     }
 }

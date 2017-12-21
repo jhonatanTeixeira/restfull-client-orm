@@ -9,3 +9,7 @@ parameters:
     hasMany:
         hasMany:
             foreignField: many
+
+    belongsMulti:
+        belongsTo:
+            foreignField: ['multiOne', 'multiTwo']

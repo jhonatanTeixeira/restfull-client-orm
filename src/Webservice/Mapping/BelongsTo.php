@@ -13,7 +13,7 @@ namespace Vox\Webservice\Mapping;
 class BelongsTo
 {
     /**
-     * @var string
+     * @var mixed
      */
     public $foreignField;
 }

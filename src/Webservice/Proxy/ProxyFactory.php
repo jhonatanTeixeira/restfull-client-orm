@@ -83,17 +83,54 @@ class ProxyFactory implements ProxyFactoryInterface
         $belongsTo = $propertyMetadata->getAnnotation(BelongsTo::class);
         
         if ($belongsTo instanceof BelongsTo && empty($propertyMetadata->getValue($object))) {
-            $idValue  = $metadata->propertyMetadata[$belongsTo->foreignField]->getValue($object);
-            
-            if (!$idValue) {
-                return;
-            }
-            
-            $data = $transferManager
-                ->find($type, $idValue);
 
-            $propertyMetadata->setValue($object, $data);
+            if (is_array($belongsTo->foreignField)) {
+                $this->fetchBelongsToMulti($object, $type, $metadata, $propertyMetadata, $belongsTo, $transferManager);
+            } else {
+                $this->fetchBelongsToSingle($object, $type, $metadata, $propertyMetadata, $belongsTo, $transferManager);
+            }
         }
+    }
+
+    private function fetchBelongsToSingle(
+        $object,
+        string $type,
+        TransferMetadata $metadata,
+        PropertyMetadata $propertyMetadata,
+        BelongsTo $belongsTo,
+        TransferManagerInterface $transferManager
+    ) {
+        $idValue  = $metadata->propertyMetadata[$belongsTo->foreignField]->getValue($object);
+
+        if (!$idValue) {
+            return;
+        }
+
+        $data = $transferManager
+            ->find($type, $idValue);
+
+        $propertyMetadata->setValue($object, $data);
+    }
+
+    private function fetchBelongsToMulti(
+        $object,
+        string $type,
+        TransferMetadata $metadata,
+        PropertyMetadata $propertyMetadata,
+        BelongsTo $belongsTo,
+        TransferManagerInterface $transferManager
+
+    ) {
+        $criteria = [];
+
+        foreach ($belongsTo->foreignField as $field) {
+            $criteria[$field] = $metadata->propertyMetadata[$field]->getValue($object);
+        }
+
+        $data = $transferManager->getRepository($type)
+            ->findOneBy($criteria);
+
+        $propertyMetadata->setValue($object, $data);
     }
 
     private function fetchHasOne(
