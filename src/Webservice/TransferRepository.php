@@ -2,7 +2,7 @@
 
 namespace Vox\Webservice;
 
-use Doctrine\Common\Collections\ArrayCollection;
+use Doctrine\Common\Collections\Collection;
 use Doctrine\Common\Persistence\ObjectRepository;
 use Vox\Webservice\Proxy\ProxyFactoryInterface;
 
@@ -70,7 +70,7 @@ final class TransferRepository implements ObjectRepository
         return $transfer;
     }
 
-    public function findAll(): ArrayCollection
+    public function findAll(): Collection
     {
         $collection = $this->webserviceClient->cGet($this->transferName);
         
@@ -81,7 +81,7 @@ final class TransferRepository implements ObjectRepository
         return $collection;
     }
 
-    public function findBy(array $criteria, array $orderBy = null, $limit = null, $offset = null): array
+    public function findBy(array $criteria, array $orderBy = null, $limit = null, $offset = null): Collection
     {
         $collection = $this->webserviceClient->cGet($this->transferName, $criteria);
         
