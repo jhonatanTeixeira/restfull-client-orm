@@ -85,7 +85,9 @@ final class TransferRepository implements ObjectRepository
     {
         $collection = $this->webserviceClient->cGet($this->transferName, $criteria);
         
-        $collection->setObjectStorage($this->objectStorage);
+        $collection->setObjectStorage($this->objectStorage)
+            ->setTransferManager($this->transferManager)
+            ->setProxyFactory($this->proxyFactory);
         
         return $collection;
     }
@@ -94,7 +96,9 @@ final class TransferRepository implements ObjectRepository
     {
         $collection = $this->webserviceClient->cGet($this->transferName, $criteria);
         
-        $collection->setObjectStorage($this->objectStorage);
+        $collection->setObjectStorage($this->objectStorage)
+            ->setTransferManager($this->transferManager)
+            ->setProxyFactory($this->proxyFactory);
         
         if ($collection->count() > 0) {
             return $collection->first();

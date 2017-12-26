@@ -16,6 +16,7 @@ use Vox\Data\ObjectHydrator;
 use Vox\Metadata\Driver\AnnotationDriver;
 use Vox\Serializer\Denormalizer;
 use Vox\Serializer\Normalizer;
+use Vox\Serializer\ObjectNormalizer;
 use Vox\Webservice\Mapping\BelongsTo;
 use Vox\Webservice\Mapping\Id;
 use Vox\Webservice\Mapping\Resource;
@@ -59,11 +60,11 @@ class TransferManagerTest extends TestCase
         $registry->set('some_client', $client);
         
         $this->metadataFactory = $metadataFactory = new MetadataFactory(new AnnotationDriver(new AnnotationReader(), TransferMetadata::class));
+        $objectNormalizer      = new ObjectNormalizer(new Normalizer($metadataFactory), new Denormalizer(new ObjectHydrator($metadataFactory)));
         $this->serializer      = $serializer      = new Serializer(
             [
-                new Normalizer($metadataFactory), 
-                new Denormalizer(new ObjectHydrator($metadataFactory))
-            ], 
+                $objectNormalizer
+            ],
             [
                 new JsonEncoder()
             ]
@@ -219,7 +220,69 @@ class TransferManagerTest extends TestCase
         
         $this->transferManager->flush();
     }
+
+    public function testShouldFindOneByAndUpdate()
+    {
+        $this->mockHandler->append(
+            new Response(
+                200,
+                ['Content-Type' => 'application/json'],
+                json_encode([
+                    [
+                        'id' => 2,
+                        'nome' => 'fulano',
+                        'email' => 'fulano@fulano.com',
+                    ]
+                ])
+            )
+        );
+
+
+        $transfer = $this->transferManager->getRepository(TransferStub::class)->findOneBy(['id' => 2]);
+
+        $transfer->setNome('fulaner1');
+
+        $this->webserviceClient->expects($this->once())
+            ->method('put')
+            ->with($transfer)
+            ->willReturn(
+                new Response(200, ['Content-Type' => 'application/json'], json_encode(['id' => 2]))
+            );
+
+        $this->transferManager->flush();
+    }
     
+    public function testShouldFindByAndUpdate()
+    {
+        $this->mockHandler->append(
+            new Response(
+                200,
+                ['Content-Type' => 'application/json'],
+                json_encode([
+                    [
+                        'id' => 2,
+                        'nome' => 'fulano',
+                        'email' => 'fulano@fulano.com',
+                    ]
+                ])
+            )
+        );
+
+
+        $transfer = $this->transferManager->getRepository(TransferStub::class)->findBy(['id' => 2])->first();
+
+        $transfer->setNome('fulaner1');
+
+        $this->webserviceClient->expects($this->once())
+            ->method('put')
+            ->with($transfer)
+            ->willReturn(
+                new Response(200, ['Content-Type' => 'application/json'], json_encode(['id' => 2]))
+            );
+
+        $this->transferManager->flush();
+    }
+
     public function testShouldCreate()
     {
         $this->mockHandler->append(new Response(200, ['Content-Type' => 'application/json'], json_encode(['id' => 4])));
