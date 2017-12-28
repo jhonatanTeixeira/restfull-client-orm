@@ -5,6 +5,9 @@ namespace Vox\Webservice;
 use InvalidArgumentException;
 use Metadata\MetadataFactoryInterface;
 use BadMethodCallException;
+use Vox\Metadata\PropertyMetadata;
+use Vox\Webservice\Mapping\BelongsTo;
+use Vox\Webservice\Metadata\TransferMetadata;
 
 /**
  * A object storage using an id hashmap pattern
@@ -59,7 +62,49 @@ class ObjectStorage implements ObjectStorageInterface
 
     public function isEquals($object): bool
     {
-        return $object == $this->storage[get_class($object)][$this->getIdValue($object)];
+        $className    = get_class($object);
+        $metadata     = $this->getClassMetadata($object);
+        $idValue      = $this->getIdValue($object);
+        $storedObject = $this->storage[$className][$idValue];
+
+        /* @var $propertyMetadata PropertyMetadata */
+        foreach ($metadata->propertyMetadata as $name => $propertyMetadata) {
+            $storedValue = $propertyMetadata->getValue($storedObject);
+            $value       = $propertyMetadata->getValue($object);
+
+            if ($propertyMetadata->hasAnnotation(BelongsTo::class)) {
+                if (!empty($value)
+                    && $this->hasRelationshipChanged($object, $value, $propertyMetadata, $metadata)) {
+                    return false;
+                }
+
+                continue;
+            }
+
+            if ($storedValue != $value) {
+                return false;
+            }
+        }
+
+        return true;
+    }
+
+    private function hasRelationshipChanged(
+        $object,
+        $value,
+        PropertyMetadata $propertyMetadata,
+        TransferMetadata $metadata
+    ): bool {
+        /* @var $belongsTo BelongsTo */
+        $belongsTo  = $propertyMetadata->getAnnotation(BelongsTo::class);
+        $externalId = $this->getIdValue($value);
+        $internalId = $metadata->propertyMetadata[$belongsTo->foreignField]->getValue($object);
+
+        if ($externalId !== $internalId) {
+            return true;
+        }
+
+        return false;
     }
 
     /**

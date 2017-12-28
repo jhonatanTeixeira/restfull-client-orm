@@ -159,6 +159,44 @@ class TransferManagerRelationshipsTest extends TestCase
 
         $transferManager->flush();
     }
+
+    public function testOnlyRelationshipChanged()
+    {
+        $proxyFactory = new ProxyFactory();
+
+        $metadataFactory = new MetadataFactory(
+            new AnnotationDriver(
+                new AnnotationReader(),
+                TransferMetadata::class
+            )
+        );
+
+        $webserviceClient = $this->createMock(WebserviceClient::class);
+        $webserviceClient->expects($this->once())
+            ->method('put')
+            ->willReturnCallback(function ($entity) {
+                return $entity;
+            });
+        ;
+
+        $webserviceClient->expects($this->exactly(3))
+            ->method('get')
+            ->willReturnCallback(function ($name, $id) {
+                return new $name($id);
+            });
+        ;
+
+        $transferManager = new TransferManager($metadataFactory, $webserviceClient, $proxyFactory);
+
+        $stub1 = $transferManager->find(RelationshipsStub::class, 1);
+        $stub1->getBelongsTo();
+        $transferManager->flush();
+
+        $stub2 = $transferManager->find(RelationshipsStub::class, 2);
+
+        $stub1->setBelongsTo($stub2);
+        $transferManager->flush();
+    }
 }
 
 
