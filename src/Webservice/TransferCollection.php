@@ -188,7 +188,7 @@ class TransferCollection implements Collection
 
     public function exists(Closure $p): bool
     {
-        foreach ($this->iterator as $key => $item) {
+        foreach ($this->getIterator() as $key => $item) {
             if ($p($key, $item)) {
                 return true;
             }
@@ -199,7 +199,7 @@ class TransferCollection implements Collection
 
     public function filter(Closure $p)
     {
-        foreach ($this->iterator as $item) {
+        foreach ($this->getIterator() as $item) {
             if ($p($item)) {
                 yield $item;
             }
@@ -208,7 +208,7 @@ class TransferCollection implements Collection
 
     public function forAll(Closure $p)
     {
-        foreach ($this->iterator as $key => $item) {
+        foreach ($this->getIterator() as $key => $item) {
             if (!$p($key, $item)) {
                 return false;
             }
@@ -219,7 +219,7 @@ class TransferCollection implements Collection
 
     public function map(Closure $func)
     {
-        foreach ($this->iterator as $item) {
+        foreach ($this->getIterator() as $item) {
             yield $func($item);
         }
     }
@@ -228,7 +228,7 @@ class TransferCollection implements Collection
     {
         $matches = $noMatches = array();
 
-        foreach ($this->elements as $key => $element) {
+        foreach ($this->getIterator() as $key => $element) {
             if ($p($key, $element)) {
                 $matches[$key] = $element;
             } else {
@@ -241,7 +241,7 @@ class TransferCollection implements Collection
 
     public function indexOf($element)
     {
-        return array_search($element, $this->items, true);
+        return array_search($element, $this->toArray(), true);
     }
 
     public function slice($offset, $length = null)
