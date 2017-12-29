@@ -7,26 +7,21 @@ use Doctrine\Common\Cache\Cache;
 use Metadata\Cache\CacheInterface;
 use Metadata\Cache\DoctrineCacheAdapter;
 use Metadata\Cache\FileCache;
-use Metadata\Driver\DriverInterface;
-use Metadata\MetadataFactory;
+use Metadata\MetadataFactoryInterface;
 use ProxyManager\Configuration;
-use Symfony\Component\Serializer\Encoder\JsonEncoder;
-use Symfony\Component\Serializer\Encoder\XmlEncoder;
-use Symfony\Component\Serializer\Normalizer\DateTimeNormalizer;
-use Symfony\Component\Serializer\Serializer;
-use Vox\Data\ObjectHydrator;
-use Vox\Metadata\Driver\AnnotationDriver;
-use Vox\Metadata\Driver\YmlDriver;
-use Vox\Serializer\Denormalizer;
-use Vox\Serializer\Normalizer;
-use Vox\Serializer\ObjectNormalizer;
+use RuntimeException;
+use Symfony\Component\Serializer\SerializerInterface;
+use Vox\Metadata\Factory\MetadataFactoryFactory;
+use Vox\Metadata\Factory\MetadataFactoryFactoryInterface;
+use Vox\Serializer\Factory\SerializerFactory;
+use Vox\Serializer\Factory\SerializerFactoryInterface;
 use Vox\Webservice\ClientRegistryInterface;
 use Vox\Webservice\Metadata\TransferMetadata;
 use Vox\Webservice\Proxy\ProxyFactory;
 use Vox\Webservice\Proxy\ProxyFactoryInterface;
 use Vox\Webservice\TransferManager;
 use Vox\Webservice\TransferManagerInterface;
-use Vox\Webservice\WebserviceClient;
+use Vox\Webservice\WebserviceClientInterface;
 
 class TransferManagerBuilder
 {
@@ -74,45 +69,75 @@ class TransferManagerBuilder
      * @var Cache
      */
     private $doctrineCache;
+    
+    /**
+     * @var SerializerFactoryInterface
+     */
+    private $serializerFactory;
+    
+    /**
+     * @var MetadataFactoryFactoryInterface
+     */
+    private $metadaFactoryFactory;
+    
+    /**
+     * @var ClientFactory
+     */
+    private $clientFactory;
+    
+    /**
+     * @var SerializerInterface
+     */
+    private $serializer;
+    
+    /**
+     * @var MetadataFactoryInterface
+     */
+    private $metadaFactory;
+    
+    /**
+     * @var WebserviceClientInterface
+     */
+    private $webserviceClient;
 
-    public function __construct(Cache $doctrineCache = null)
-    {
-        $this->doctrineCache = $doctrineCache;
+    public function __construct(
+        Cache $doctrineCache = null,
+        SerializerFactoryInterface $serializerFactory = null,
+        MetadataFactoryFactoryInterface $metadaFactoryFactory = null,
+        ClientFactory $clientFactory = null
+    ) {
+        $this->doctrineCache        = $doctrineCache;
+        $this->serializerFactory    = $serializerFactory ?? new SerializerFactory();
+        $this->metadaFactoryFactory = $metadaFactoryFactory ?? new MetadataFactoryFactory();
+        $this->clientFactory        = $clientFactory ?? new ClientFactory();
     }
 
-    private function createMetadataDriver(): DriverInterface
+    private function createMetadataFactory(): MetadataFactoryInterface
     {
         switch ($this->metadataDriver) {
             case 'annotation':
-                $driver = new AnnotationDriver(
-                    $this->annotationReader ?? new AnnotationReader(),
-                    $this->metadataClassName
+                return $this->metadaFactoryFactory->createAnnotationMetadataFactory(
+                    $this->metadataClassName,
+                    $this->annotationReader ?? new AnnotationReader()
                 );
-                break;
             case 'yaml':
-                $driver = new YmlDriver($this->metadataPath, $this->metadataClassName);
-                break;
+                return $this->metadaFactoryFactory
+                    ->createYmlMetadataFactory($this->metadataPath, $this->metadataClassName);
             default:
-                throw new \RuntimeException('invalid driver provided');
+                throw new RuntimeException('invalid driver provided');
         }
-
-        return $driver;
     }
 
     private function createMetadataCache(): CacheInterface
     {
         switch ($this->metadataCache) {
             case 'file':
-                $cache = new FileCache($this->cacheDir);
-                break;
+                return new FileCache($this->cacheDir);
             case 'doctrine':
-                $cache = new DoctrineCacheAdapter('metadata', $this->doctrineCache);
-                break;
+                return new DoctrineCacheAdapter('metadata', $this->doctrineCache);
             default:
-                throw new \RuntimeException('invalid metadata cache chosen');
+                throw new RuntimeException('invalid metadata cache chosen');
         }
-
-        return $cache;
     }
 
     private function getProxyFactory(): ProxyFactoryInterface
@@ -131,26 +156,19 @@ class TransferManagerBuilder
 
     public function createTransferManager(): TransferManagerInterface
     {
-        $driver           = $this->createMetadataDriver();
-        $metadataFactory  = new MetadataFactory($driver, ClassHierarchyMetadata::class, $this->debug);
-        $objectHydrator   = new ObjectHydrator($metadataFactory);
-        $normalizer       = new Normalizer($metadataFactory);
-        $denormalizer     = new Denormalizer($objectHydrator);
-        $objectNormalizer = new ObjectNormalizer($normalizer, $denormalizer);
-        $serializer       = new Serializer(
-            [$objectNormalizer, new DateTimeNormalizer()],
-            [new JsonEncoder(), new XmlEncoder()]
-        );
+        $metadataFactory = $this->metadaFactory ?? $this->createMetadataFactory();
+        $serializer      = $this->serializer ?? $this->serializerFactory->createSerialzer($metadataFactory);
 
         if (null !== $this->metadataCache) {
             $metadataFactory->setCache($this->createMetadataCache());
         }
 
         if (!isset($this->clientRegistry)) {
-            throw new \RuntimeException('no client registry added');
+            throw new RuntimeException('no client registry added');
         }
 
-        $webServiceClient = new WebserviceClient($this->clientRegistry, $metadataFactory, $serializer, $serializer);
+        $webServiceClient = $this->webserviceClient ?? $this->clientFactory
+            ->createWebserviceClient($this->clientRegistry, $metadataFactory, $serializer, $serializer);
 
         return new TransferManager($metadataFactory, $webServiceClient, $this->getProxyFactory());
     }
@@ -208,6 +226,27 @@ class TransferManagerBuilder
     {
         $this->debug = $debug;
 
+        return $this;
+    }
+    
+    public function withSerializer(SerializerInterface $serializer)
+    {
+        $this->serializer = $serializer;
+        
+        return $this;
+    }
+
+    public function withMetadaFactory(MetadataFactoryInterface $metadaFactory)
+    {
+        $this->metadaFactory = $metadaFactory;
+        
+        return $this;
+    }
+    
+    public function withWebserviceClient(WebserviceClientInterface $webserviceClient)
+    {
+        $this->webserviceClient = $webserviceClient;
+        
         return $this;
     }
 }
