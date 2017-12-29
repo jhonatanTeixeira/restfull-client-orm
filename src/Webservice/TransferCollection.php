@@ -3,6 +3,7 @@
 namespace Vox\Webservice;
 
 use Closure;
+use Doctrine\Common\Collections\ArrayCollection;
 use Doctrine\Common\Collections\Collection;
 use Psr\Http\Message\ResponseInterface;
 use Symfony\Component\Serializer\Normalizer\DenormalizerInterface;
@@ -107,7 +108,7 @@ class TransferCollection implements Collection
 
     public function contains($element): bool
     {
-        return in_array($this->toArray(), $element, true);
+        return in_array($element, $this->toArray(), true);
     }
 
     public function isEmpty(): bool
@@ -122,9 +123,13 @@ class TransferCollection implements Collection
 
     public function removeElement($element)
     {
-        $key = array_search($this->toArray(), $this->items, true);
+        $key = array_search($element, $this->toArray(), true);
 
         $this->remove($key);
+        
+        if ($this->transferManager) {
+            $this->transferManager->remove($element);
+        }
     }
 
     public function containsKey($key)
@@ -236,7 +241,7 @@ class TransferCollection implements Collection
             }
         }
 
-        return array($this->createFrom($matches), $this->createFrom($noMatches));
+        return [new ArrayCollection($matches), new ArrayCollection($noMatches)];
     }
 
     public function indexOf($element)

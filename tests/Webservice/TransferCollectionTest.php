@@ -47,7 +47,7 @@ class TransferCollectionTest extends TestCase
 
         $transferCollection = new TransferCollection(CollectionItem::class, $denormalizer, $response);
         $transferCollection->setProxyFactory($pf = new ProxyFactory())
-            ->setTransferManager(new TransferManager($mf, $this->createMock(WebserviceClientInterface::class), $pf));
+            ->setTransferManager($tm = new TransferManager($mf, $this->createMock(WebserviceClientInterface::class), $pf));
 
         $this->assertEquals(1, $transferCollection->first()->getId());
         $this->assertEquals('some name 1', $transferCollection->first()->getName());
@@ -66,9 +66,41 @@ class TransferCollectionTest extends TestCase
         }
 
         $this->assertTrue($transferCollection->exists(function ($key, $item) {return $item->getId() == 3;}));
+        $this->assertTrue(isset($transferCollection[1]));
+        $this->assertFalse($transferCollection->forAll(function ($key, $item) {return $item->getId() == 1;}));
         $this->assertCount(5, $transferCollection->getKeys());
+        $this->assertCount(5, $transferCollection);
         $this->assertEquals(0, $transferCollection->key());
         $this->assertInstanceOf(AccessInterceptorValueHolderInterface::class, $transferCollection->current());
+        $this->assertInstanceOf(AccessInterceptorValueHolderInterface::class, $transferCollection[0]);
+        
+        $newItem = new CollectionItem();
+        $tm->persist($newItem);
+        $transferCollection->add($newItem);
+
+        $this->assertCount(6, $transferCollection);
+        $this->assertTrue($transferCollection->contains($newItem));
+        $this->assertFalse($transferCollection->isEmpty());
+        
+        $transferCollection->removeElement($newItem);
+        $this->assertCount(5, $transferCollection);
+        $transferCollection[7] = $newItem;
+        $this->assertCount(6, $transferCollection);
+        unset($transferCollection[7]);
+        $this->assertCount(5, $transferCollection);
+        
+        $transferCollection->map(function ($current) {
+            $this->assertInstanceOf(CollectionItem::class, $current);
+        });
+        
+        $this->assertCount(2, $transferCollection->slice(1, 2));
+        
+        $partitions = $transferCollection->partition(function ($key, $current) {
+            return $current->getName() == "some name 3";
+        });
+        
+        $this->assertCount(2, $partitions[0]);
+        $this->assertCount(3, $partitions[1]);
     }
 }
 
