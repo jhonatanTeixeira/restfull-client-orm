@@ -89,7 +89,9 @@ class Normalizer implements NormalizerInterface, NormalizerAwareInterface
                 $value = $this->normalizeIfSupported($value, $format, $context);
             }
 
-            $target = $binding ? ($binding->target ?? $binding->source ?? null) : $propertyMetadata->name;
+            $target = $binding
+                ? ($binding->target ?? $binding->source ?? $propertyMetadata->name)
+                : $propertyMetadata->name;
 
             if (preg_match('/\./', $target)) {
                 $path = implode("']['", explode('.', sprintf("['%s']", $target)));
