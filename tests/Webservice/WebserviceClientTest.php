@@ -6,6 +6,7 @@ use DateTime;
 use Doctrine\Common\Annotations\AnnotationReader;
 use GuzzleHttp\Client;
 use GuzzleHttp\ClientInterface;
+use GuzzleHttp\Exception\ClientException;
 use GuzzleHttp\Handler\MockHandler;
 use GuzzleHttp\HandlerStack;
 use GuzzleHttp\Psr7\Response;
@@ -20,6 +21,7 @@ use Vox\Metadata\Driver\AnnotationDriver;
 use Vox\Metadata\Driver\YmlDriver;
 use Vox\Serializer\Denormalizer;
 use Vox\Serializer\Normalizer;
+use Vox\Webservice\Exception\WebserviceResponseException;
 use Vox\Webservice\Mapping\Resource;
 use Vox\Webservice\Metadata\TransferMetadata;
 
@@ -35,7 +37,7 @@ class WebserviceClientTest extends TestCase
     {
         $this->mockHandler = new MockHandler();
         
-        $client = new Client(['handler' => HandlerStack::create($this->mockHandler)]);
+        $client = new Client(['handler' => $this->mockHandler]);
         
         $registry = new ClientRegistry();
         $registry->set('some_client', $client);
@@ -299,6 +301,33 @@ class WebserviceClientTest extends TestCase
         $webserviceClient->get(YmlStub::class, 1);
         $webserviceClient->cGet(YmlStub::class);
         $webserviceClient->cGet(YmlStub::class, ['nome' => 'a']);
+    }
+
+    public function testShouldThrowException()
+    {
+        $this->mockHandler->append(
+            new Response(
+                400,
+                ['Content-Type' => 'application/json'],
+                json_encode([
+                    'violations' => [
+                        'otherValue' => 'must be string',
+                        'extra_value' => 'higher than 11',
+                    ]
+                ])
+            )
+        );
+
+        $webserviceClient = $this->webserviceClient;
+
+        try {
+            $webserviceClient->post(new SomeStub());
+        } catch (WebserviceResponseException $ex) {
+            $this->assertEquals('must be string', $ex->getBody()['violations']['otherValue']);
+            $this->assertEquals(400, $ex->getCode());
+            $this->assertNull($ex->getRequest());
+        }
+
     }
 }
 

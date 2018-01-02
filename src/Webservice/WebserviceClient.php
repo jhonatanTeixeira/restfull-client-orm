@@ -8,7 +8,7 @@ use Metadata\MetadataFactoryInterface;
 use RuntimeException;
 use Symfony\Component\Serializer\Normalizer\DenormalizerInterface;
 use Symfony\Component\Serializer\Normalizer\NormalizerInterface;
-use Symfony\Component\Serializer\SerializerInterface;
+use Vox\Webservice\Exception\WebserviceResponseException;
 use Vox\Webservice\Mapping\Resource;
 use Vox\Webservice\Metadata\TransferMetadata;
 
@@ -64,7 +64,7 @@ class WebserviceClient implements WebserviceClientInterface
         $response = $client->request('GET', $resource->route, $options);
 
         if ($response->getStatusCode() >= 300) {
-            throw new Exception($response->getReasonPhrase());
+            throw new WebserviceResponseException($response);
         }
 
         return new TransferCollection($transferName, $this->denormalizer, $response);
@@ -90,7 +90,7 @@ class WebserviceClient implements WebserviceClientInterface
         $response = $client->request('GET', $route, ['headers' => ['Content-Type' => 'application/json']]);
 
         if ($response->getStatusCode() >= 300) {
-            throw new Exception($response->getReasonPhrase());
+            throw new WebserviceResponseException($response);
         }
 
         $contents = $response->getBody()->getContents();
@@ -109,7 +109,7 @@ class WebserviceClient implements WebserviceClientInterface
         $response = $client->request('POST', $resource->route, ['json' => $data]);
 
         if ($response->getStatusCode() >= 300) {
-            throw new Exception($response->getReasonPhrase());
+            throw new WebserviceResponseException($response);
         }
 
         $contents = $response->getBody()->getContents();
@@ -131,7 +131,7 @@ class WebserviceClient implements WebserviceClientInterface
         $response = $client->request('PUT', $route, ['json' => $data]);
 
         if ($response->getStatusCode() >= 300) {
-            throw new Exception($response->getReasonPhrase());
+            throw new WebserviceResponseException($response);
         }
 
         $this->denormalizer->denormalize(json_decode($response->getBody()->getContents(), true), $transfer);
