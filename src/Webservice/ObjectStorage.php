@@ -81,6 +81,10 @@ class ObjectStorage implements ObjectStorageInterface
                 continue;
             }
 
+            if ($propertyMetadata->hasAnnotation(HasOne::class) || $propertyMetadata->hasAnnotation(HasMany::class)) {
+                continue;
+            }
+
             if ($storedValue != $value) {
                 return false;
             }
