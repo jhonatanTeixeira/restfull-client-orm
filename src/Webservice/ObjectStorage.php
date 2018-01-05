@@ -7,6 +7,8 @@ use Metadata\MetadataFactoryInterface;
 use BadMethodCallException;
 use Vox\Metadata\PropertyMetadata;
 use Vox\Webservice\Mapping\BelongsTo;
+use Vox\Webservice\Mapping\HasMany;
+use Vox\Webservice\Mapping\HasOne;
 use Vox\Webservice\Metadata\TransferMetadata;
 
 /**
