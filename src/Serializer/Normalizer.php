@@ -74,7 +74,7 @@ class Normalizer implements NormalizerInterface, NormalizerAwareInterface
                 continue;
             }
 
-            if (is_array($value)
+            if ((is_array($value) || $value instanceof \Traversable)
                 && (preg_match('/\[\]$/', $propertyMetadata->type) || $propertyMetadata->type == 'array')) {
                 $items = [];
 
