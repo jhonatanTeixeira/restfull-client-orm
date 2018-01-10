@@ -97,13 +97,18 @@ class ObjectStorage implements ObjectStorageInterface
 
     private function hasRelationshipChanged(
         $object,
-        $value,
+        $related,
         PropertyMetadata $propertyMetadata,
         TransferMetadata $metadata
     ): bool {
         /* @var $belongsTo BelongsTo */
         $belongsTo  = $propertyMetadata->getAnnotation(BelongsTo::class);
-        $externalId = $this->getIdValue($value);
+
+        if (is_array($belongsTo->foreignField)) {
+            return $this->hasMultiFieldsRelationshipChanged($object, $related, $belongsTo->foreignField);
+        }
+
+        $externalId = $this->getIdValue($related);
         $internalId = $metadata->propertyMetadata[$belongsTo->foreignField]->getValue($object);
 
         if ($externalId !== $internalId) {
@@ -112,6 +117,33 @@ class ObjectStorage implements ObjectStorageInterface
         }
 
         return false;
+    }
+
+    private function hasMultiFieldsRelationshipChanged(
+        $object,
+        $related,
+        array $fields
+    ): bool {
+        $objectValues  = [];
+        $relatedValues = [];
+
+        $objectMetadata  = $this->getClassMetadata($object);
+        $relatedMetadata = $this->getClassMetadata($related);
+
+        foreach ($fields as $field) {
+            $objectValues[$field]  = $objectMetadata->propertyMetadata[$field]->getValue($object);
+            $relatedValues[$field] = $relatedMetadata->propertyMetadata[$field]->getValue($related);
+        }
+
+        $has = count(array_diff_assoc($objectValues, $relatedValues)) > 0;
+
+        if ($has) {
+            foreach ($relatedValues as $field => $value) {
+                $objectMetadata->propertyMetadata[$field]->setValue($object, $value);
+            }
+        }
+
+        return $has;
     }
 
     /**

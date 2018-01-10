@@ -57,6 +57,7 @@ class ObjectNormalizer implements NormalizerInterface, DenormalizerInterface, Se
     public function normalize($object, $format = null, array $context = array())
     {
         $data = $this->normalizer->normalize($object, $format, $context);
+        $this->normalizer->clear();
         
         return $this->changeKeys($data, true);
     }

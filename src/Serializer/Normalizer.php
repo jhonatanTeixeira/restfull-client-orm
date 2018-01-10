@@ -36,7 +36,7 @@ class Normalizer implements NormalizerInterface, NormalizerAwareInterface
     public function __construct(MetadataFactoryInterface $metadataFactory)
     {
         $this->metadataFactory = $metadataFactory;
-        $this->storage = new \SplObjectStorage();
+        $this->clear();
     }
     
     public function normalize($object, $format = null, array $context = [])
@@ -127,5 +127,10 @@ class Normalizer implements NormalizerInterface, NormalizerAwareInterface
     public function setNormalizer(NormalizerInterface $normalizer)
     {
         $this->normalizer = $normalizer;
+    }
+
+    public function clear()
+    {
+        $this->storage = new \SplObjectStorage();
     }
 }

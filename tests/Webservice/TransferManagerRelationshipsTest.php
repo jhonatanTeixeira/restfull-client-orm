@@ -223,12 +223,41 @@ class TransferManagerRelationshipsTest extends TestCase
         
         $guzzleClient = $this->createMock(Client::class);
         
-        $guzzleClient->expects($this->exactly(5))
+        $guzzleClient->expects($this->exactly(6))
             ->method('request')
             ->withConsecutive(
                 ['GET', '/foo/1', ['headers' => ['Content-Type' => 'application/json']]],
                 ['GET', '/foo/3', ['headers' => ['Content-Type' => 'application/json']]],
                 ['GET', '/foo/2', ['headers' => ['Content-Type' => 'application/json']]],
+                ['PUT', '/foo/1', ['json' => [
+                    'id' => 1,
+                    'belongs' => 2,
+                    'one' => 1,
+                    'many' => 1,
+                    'multi_one' => 3,
+                    'multi_two' => 3,
+                    'belongs_to' => [
+                        'id' => 2,
+                        'belongs' => 4,
+                        'one' => 1,
+                        'many' => 1,
+                        'multi_one' => 1,
+                        'multi_two' => 1,
+                        'belongs_to' => null,
+                        'has_one' => null,
+                        'has_many' => null,
+                        'belongs_multi' => null
+                    ],
+                    'has_one' => null,
+                    'has_many' => null,
+                    'belongs_multi' => null,
+                ]]],
+                [
+                    'GET', '/foo', [
+                        'headers' => ['Content-Type' => 'application/json'], 
+                        'query' => ['multiTwo' => 3, 'multiOne' => 3]
+                    ]
+                ],
                 ['PUT', '/foo/1', ['json' => [
                     'id' => 1,
                     'belongs' => 2,
@@ -250,23 +279,27 @@ class TransferManagerRelationshipsTest extends TestCase
                     ],
                     'has_one' => null,
                     'has_many' => null,
-                    'belongs_multi' => null,
-                ]]],
-                [
-                    'GET',
-                    '/foo',
-                    [
-                        'headers' => ['Content-Type' => 'application/json'], 
-                        'query' => ['multiTwo' => 1, 'multiOne' => 1]
-                    ]
-                ]
+                    'belongs_multi' => [
+                        'id' => 2,
+                        'belongs' => 4,
+                        'one' => 1,
+                        'many' => 1,
+                        'multi_one' => 1,
+                        'multi_two' => 1,
+                        'belongs_to' => null,
+                        'has_one' => null,
+                        'has_many' => null,
+                        'belongs_multi' => null
+                    ],
+                ]]]
             )
             ->willReturnOnConsecutiveCalls(
-                new Response(200, [], json_encode(['id' => 1, 'belongs' => 3])),
+                new Response(200, [], json_encode(['id' => 1, 'belongs' => 3, 'multi_two' => 3, 'multi_one' => 3])),
                 new Response(200, [], json_encode(['id' => 3])),
                 new Response(200, [], json_encode(['id' => 2, 'belongs' => 4])),
                 new Response(200, [], json_encode(['id' => 1, 'belongs' => 2])),
-                new Response(200, [], json_encode([['id' => 5, 'belongs' => 2]]))
+                new Response(200, [], json_encode([['id' => 5, 'belongs' => 2, 'multi_two' => 3, 'multi_one' => 3]])),
+                new Response(200, [], json_encode(['id' => 1]))
             )
         ;
         
@@ -294,7 +327,9 @@ class TransferManagerRelationshipsTest extends TestCase
         $transferManager->flush();
         
         $stub1->getBelongsMulti();
-        $this->markTestIncomplete('needs to fix the detection for changes on multi belongs to');
+        $transferManager->flush();
+
+        $stub1->setBelongsMulti($stub2);
         $transferManager->flush();
     }
 }
@@ -438,6 +473,11 @@ class RelationshipsStub
     public function getBelongsMulti(): RelationshipsStub
     {
         return $this->belongsMulti;
+    }
+
+    public function setBelongsMulti(RelationshipsStub $belongsMulti)
+    {
+        $this->belongsMulti = $belongsMulti;
     }
 }
 
