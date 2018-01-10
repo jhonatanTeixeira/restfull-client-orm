@@ -122,7 +122,7 @@ class ProxyFactory implements ProxyFactoryInterface
 
     ) {
         $criteria = [];
-
+        
         foreach ($belongsTo->foreignField as $field) {
             $criteria[$field] = $metadata->propertyMetadata[$field]->getValue($object);
         }

@@ -107,6 +107,7 @@ class ObjectStorage implements ObjectStorageInterface
         $internalId = $metadata->propertyMetadata[$belongsTo->foreignField]->getValue($object);
 
         if ($externalId !== $internalId) {
+            $metadata->propertyMetadata[$belongsTo->foreignField]->setValue($object, $externalId);
             return true;
         }
 

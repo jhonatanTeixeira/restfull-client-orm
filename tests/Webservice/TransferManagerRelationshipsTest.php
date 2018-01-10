@@ -6,16 +6,26 @@ use Doctrine\Common\Annotations\AnnotationReader;
 use Doctrine\Common\Collections\ArrayCollection;
 use Doctrine\Common\Collections\Collection;
 use Doctrine\Common\Persistence\ObjectRepository;
+use GuzzleHttp\Client;
+use GuzzleHttp\Psr7\Response;
 use Metadata\MetadataFactory;
 use PHPUnit\Framework\TestCase;
+use Symfony\Component\Serializer\Encoder\JsonEncoder;
+use Symfony\Component\Serializer\Serializer;
+use Vox\Data\ObjectHydrator;
 use Vox\Metadata\Driver\AnnotationDriver;
 use Vox\Metadata\Driver\YmlDriver;
+use Vox\Serializer\Denormalizer;
+use Vox\Serializer\Normalizer;
+use Vox\Serializer\ObjectNormalizer;
 use Vox\Webservice\Mapping\BelongsTo;
 use Vox\Webservice\Mapping\HasMany;
 use Vox\Webservice\Mapping\HasOne;
 use Vox\Webservice\Mapping\Id;
+use Vox\Webservice\Mapping\Resource;
 use Vox\Webservice\Metadata\TransferMetadata;
 use Vox\Webservice\Proxy\ProxyFactory;
+use function GuzzleHttp\json_encode;
 
 class TransferManagerRelationshipsTest extends TestCase
 {
@@ -197,9 +207,101 @@ class TransferManagerRelationshipsTest extends TestCase
         $stub1->setBelongsTo($stub2);
         $transferManager->flush();
     }
+
+    public function testRelationshipChangedCallCorrectUrls()
+    {
+        $proxyFactory = new ProxyFactory();
+
+        $metadataFactory = new MetadataFactory(
+            new AnnotationDriver(
+                new AnnotationReader(),
+                TransferMetadata::class
+            )
+        );
+        
+        $clientRegistry = new ClientRegistry();
+        
+        $guzzleClient = $this->createMock(Client::class);
+        
+        $guzzleClient->expects($this->exactly(5))
+            ->method('request')
+            ->withConsecutive(
+                ['GET', '/foo/1', ['headers' => ['Content-Type' => 'application/json']]],
+                ['GET', '/foo/3', ['headers' => ['Content-Type' => 'application/json']]],
+                ['GET', '/foo/2', ['headers' => ['Content-Type' => 'application/json']]],
+                ['PUT', '/foo/1', ['json' => [
+                    'id' => 1,
+                    'belongs' => 2,
+                    'one' => 1,
+                    'many' => 1,
+                    'multi_one' => 1,
+                    'multi_two' => 1,
+                    'belongs_to' => [
+                        'id' => 2,
+                        'belongs' => 4,
+                        'one' => 1,
+                        'many' => 1,
+                        'multi_one' => 1,
+                        'multi_two' => 1,
+                        'belongs_to' => null,
+                        'has_one' => null,
+                        'has_many' => null,
+                        'belongs_multi' => null
+                    ],
+                    'has_one' => null,
+                    'has_many' => null,
+                    'belongs_multi' => null,
+                ]]],
+                [
+                    'GET',
+                    '/foo',
+                    [
+                        'headers' => ['Content-Type' => 'application/json'], 
+                        'query' => ['multiTwo' => 1, 'multiOne' => 1]
+                    ]
+                ]
+            )
+            ->willReturnOnConsecutiveCalls(
+                new Response(200, [], json_encode(['id' => 1, 'belongs' => 3])),
+                new Response(200, [], json_encode(['id' => 3])),
+                new Response(200, [], json_encode(['id' => 2, 'belongs' => 4])),
+                new Response(200, [], json_encode(['id' => 1, 'belongs' => 2])),
+                new Response(200, [], json_encode([['id' => 5, 'belongs' => 2]]))
+            )
+        ;
+        
+        $clientRegistry->set('foo', $guzzleClient);
+        
+        $serializer = new Serializer([
+            new ObjectNormalizer(
+                new Normalizer($metadataFactory),
+                new Denormalizer(new ObjectHydrator($metadataFactory))
+            ),
+            [new JsonEncoder()]
+        ]);
+        
+        $webserviceClient = new WebserviceClient($clientRegistry, $metadataFactory, $serializer, $serializer);
+
+        $transferManager = new TransferManager($metadataFactory, $webserviceClient, $proxyFactory);
+
+        $stub1 = $transferManager->find(RelationshipsStub::class, 1);
+        $stub1->getBelongsTo();
+        $transferManager->flush();
+
+        $stub2 = $transferManager->find(RelationshipsStub::class, 2);
+
+        $stub1->setBelongsTo($stub2);
+        $transferManager->flush();
+        
+        $stub1->getBelongsMulti();
+        $this->markTestIncomplete('needs to fix the detection for changes on multi belongs to');
+        $transferManager->flush();
+    }
 }
 
-
+/**
+ * @Resource(client="foo", route="/foo")
+ */
 class RelationshipsStub
 {
     /**

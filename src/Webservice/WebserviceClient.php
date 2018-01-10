@@ -88,13 +88,13 @@ class WebserviceClient implements WebserviceClientInterface
         $client   = $this->getClient($transferName);
         $route    = sprintf('%s/%s', $resource->route, $id);
         $response = $client->request('GET', $route, ['headers' => ['Content-Type' => 'application/json']]);
-
+        
         if ($response->getStatusCode() >= 300) {
             throw new WebserviceResponseException($response);
         }
 
         $contents = $response->getBody()->getContents();
-
+        
         if ($contents) {
             return $this->denormalizer->denormalize(json_decode($contents, true), $transferName);
         }
