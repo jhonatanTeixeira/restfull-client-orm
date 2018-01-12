@@ -332,6 +332,77 @@ class TransferManagerRelationshipsTest extends TestCase
         $stub1->setBelongsMulti($stub2);
         $transferManager->flush();
     }
+
+    public function testShouldPostMultiple()
+    {
+        $proxyFactory = new ProxyFactory();
+
+        $metadataFactory = new MetadataFactory(
+            new AnnotationDriver(
+                new AnnotationReader(),
+                TransferMetadata::class
+            )
+        );
+
+        $clientRegistry = new ClientRegistry();
+
+        $guzzleClient = $this->createMock(Client::class);
+
+        $guzzleClient->expects($this->exactly(2))
+            ->method('request')
+            ->withConsecutive(
+                ['POST', '/foo', ['json' => [
+                    'id' => null,
+                    'belongs' => 1,
+                    'one' => 1,
+                    'many' => 1,
+                    'multi_one' => 1,
+                    'multi_two' => 1,
+                    'belongs_to' => null,
+                    'has_one' => null,
+                    'has_many' => null,
+                    'belongs_multi' => null,
+                ]]],
+                ['POST', '/foo', ['json' => [
+                    'id' => null,
+                    'belongs' => 1,
+                    'one' => 1,
+                    'many' => 1,
+                    'multi_one' => 1,
+                    'multi_two' => 1,
+                    'belongs_to' => null,
+                    'has_one' => null,
+                    'has_many' => null,
+                    'belongs_multi' => null,
+                ]]]
+            )->willReturnOnConsecutiveCalls(
+                new Response(200, [], json_encode(['id' => 1])),
+                new Response(200, [], json_encode(['id' => 2]))
+            )
+        ;
+
+        $clientRegistry->set('foo', $guzzleClient);
+
+        $serializer = new Serializer([
+            new ObjectNormalizer(
+                new Normalizer($metadataFactory),
+                new Denormalizer(new ObjectHydrator($metadataFactory))
+            ),
+            [new JsonEncoder()]
+        ]);
+
+        $webserviceClient = new WebserviceClient($clientRegistry, $metadataFactory, $serializer, $serializer);
+
+        $transferManager = new TransferManager($metadataFactory, $webserviceClient, $proxyFactory);
+
+        $one = new RelationshipsStub(null);
+        $two = new RelationshipsStub(null);
+
+        $transferManager->persist($one);
+        $transferManager->persist($two);
+
+        $transferManager->flush();
+    }
 }
 
 /**

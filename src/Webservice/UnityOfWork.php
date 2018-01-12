@@ -121,9 +121,9 @@ class UnityOfWork implements UnityOfWorkInterface
     public function getIterator()
     {
         $iterator = new AppendIterator();
-        $iterator->append($this->newObjects);
+        $iterator->append(new \ArrayIterator(iterator_to_array($this->newObjects)));
         $iterator->append($this->data->getIterator());
-        $iterator->append($this->removedObjects);
+        $iterator->append(new \ArrayIterator(iterator_to_array($this->removedObjects)));
         
         return $iterator;
     }
