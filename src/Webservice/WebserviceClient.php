@@ -2,8 +2,8 @@
 
 namespace Vox\Webservice;
 
-use Exception;
 use GuzzleHttp\ClientInterface;
+use GuzzleHttp\Psr7\Request;
 use Metadata\MetadataFactoryInterface;
 use RuntimeException;
 use Symfony\Component\Serializer\Normalizer\DenormalizerInterface;
@@ -64,7 +64,7 @@ class WebserviceClient implements WebserviceClientInterface
         $response = $client->request('GET', $resource->route, $options);
 
         if ($response->getStatusCode() >= 300) {
-            throw new WebserviceResponseException($response);
+            throw new WebserviceResponseException($response, new Request('GET', $response->route, $options));
         }
 
         return new TransferCollection($transferName, $this->denormalizer, $response);
@@ -78,7 +78,7 @@ class WebserviceClient implements WebserviceClientInterface
         $response = $client->request('DELETE', $route);
 
         if ($response->getStatusCode() >= 300) {
-            throw new Exception($response->getReasonPhrase());
+            throw new WebserviceResponseException($response, new Request('DELETE', $route));
         }
     }
 
@@ -90,7 +90,7 @@ class WebserviceClient implements WebserviceClientInterface
         $response = $client->request('GET', $route, ['headers' => ['Content-Type' => 'application/json']]);
         
         if ($response->getStatusCode() >= 300) {
-            throw new WebserviceResponseException($response);
+            throw new WebserviceResponseException($response, new Request('GET', $route));
         }
 
         $contents = $response->getBody()->getContents();
@@ -109,7 +109,7 @@ class WebserviceClient implements WebserviceClientInterface
         $response = $client->request('POST', $resource->route, ['json' => $data]);
 
         if ($response->getStatusCode() >= 300) {
-            throw new WebserviceResponseException($response);
+            throw new WebserviceResponseException($response, new Request('POST', $resource->route, ['json' => $data]));
         }
 
         $contents = $response->getBody()->getContents();
@@ -131,7 +131,7 @@ class WebserviceClient implements WebserviceClientInterface
         $response = $client->request('PUT', $route, ['json' => $data]);
 
         if ($response->getStatusCode() >= 300) {
-            throw new WebserviceResponseException($response);
+            throw new WebserviceResponseException($response, new Request('PUT', $route, ['json' => $data]));
         }
 
         $this->denormalizer->denormalize(json_decode($response->getBody()->getContents(), true), $transfer);

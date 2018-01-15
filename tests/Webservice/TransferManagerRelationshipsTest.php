@@ -348,7 +348,7 @@ class TransferManagerRelationshipsTest extends TestCase
 
         $guzzleClient = $this->createMock(Client::class);
 
-        $guzzleClient->expects($this->exactly(2))
+        $guzzleClient->expects($this->exactly(4))
             ->method('request')
             ->withConsecutive(
                 ['POST', '/foo', ['json' => [
@@ -374,10 +374,14 @@ class TransferManagerRelationshipsTest extends TestCase
                     'has_one' => null,
                     'has_many' => null,
                     'belongs_multi' => null,
-                ]]]
+                ]]],
+                ['DELETE', '/foo/1'],
+                ['DELETE', '/foo/2']
             )->willReturnOnConsecutiveCalls(
                 new Response(200, [], json_encode(['id' => 1])),
-                new Response(200, [], json_encode(['id' => 2]))
+                new Response(200, [], json_encode(['id' => 2])),
+                new Response(200),
+                new Response(200)
             )
         ;
 
@@ -400,6 +404,11 @@ class TransferManagerRelationshipsTest extends TestCase
 
         $transferManager->persist($one);
         $transferManager->persist($two);
+
+        $transferManager->flush();
+
+        $transferManager->remove($one);
+        $transferManager->remove($two);
 
         $transferManager->flush();
     }

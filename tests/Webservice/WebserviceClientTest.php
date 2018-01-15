@@ -325,7 +325,7 @@ class WebserviceClientTest extends TestCase
         } catch (WebserviceResponseException $ex) {
             $this->assertEquals('must be string', $ex->getBody()['violations']['otherValue']);
             $this->assertEquals(400, $ex->getCode());
-            $this->assertNull($ex->getRequest());
+            $this->assertEquals('POST', $ex->getRequest()->getMethod());
         }
 
     }
