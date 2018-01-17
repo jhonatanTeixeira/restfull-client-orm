@@ -161,8 +161,8 @@ class ObjectStorage implements ObjectStorageInterface
         $className = (string) $params[0];
         $id        = $params[1];
 
-        if (!is_scalar($id)) {
-            throw new BadMethodCallException('$id must be scalar value');
+        if (!$id) {
+            throw new BadMethodCallException('$id must be valid value');
         }
 
         return $this->storage[$className][$id] ?? null;

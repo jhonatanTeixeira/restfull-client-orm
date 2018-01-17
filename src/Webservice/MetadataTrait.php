@@ -3,7 +3,6 @@
 namespace Vox\Webservice;
 
 use Metadata\MetadataFactoryInterface;
-use RuntimeException;
 use Vox\Webservice\Metadata\TransferMetadata;
 
 /**
@@ -20,13 +19,7 @@ trait MetadataTrait
     
     private function getIdValue($object)
     {
-        $id = $this->getClassMetadata($object)->id;
-        
-        if (!$id) {
-            throw new RuntimeException("transfer " . get_class($object) . " has no id mapping");
-        }
-        
-        return $id->getValue($object);
+        return $this->getClassMetadata($object)->id->getValue($object);
     }
     
     private function getClassMetadata($object): TransferMetadata

@@ -36,7 +36,7 @@ class UnityOfWork implements UnityOfWorkInterface
      * @var SplObjectStorage
      */
     private $removedObjects;
-    
+
     public function __construct(MetadataFactoryInterface $metadataFactory)
     {
         $this->metadataFactory = $metadataFactory;
@@ -58,7 +58,7 @@ class UnityOfWork implements UnityOfWorkInterface
         
         if (!$id) {
             $this->newObjects->attach($object);
-            
+
             return;
         }
         
@@ -114,8 +114,9 @@ class UnityOfWork implements UnityOfWorkInterface
     
     public function isDetached($object): bool
     {
-        return !empty($this->getIdValue($object))
-            && !$this->cleanData->contains($object);
+        return !$this->cleanData->contains($object)
+            && !$this->data->contains($object)
+            && !$this->newObjects->contains($object);
     }
 
     public function getIterator()

@@ -61,7 +61,7 @@ class TransferManagerBuilderTest extends TestCase
         
         $metadata = $transferManager->getClassMetadata(Testing::class);
 
-        $this->assertEquals('string', $metadata->id->type);
+        $this->assertEquals('string', $metadata->id->getType());
     }
     
     public function testShouldCreateCustomized()
@@ -81,7 +81,7 @@ class TransferManagerBuilderTest extends TestCase
         
         $metadata = $transferManager->getClassMetadata(Testing::class);
 
-        $this->assertEquals('string', $metadata->id->type);
+        $this->assertEquals('string', $metadata->id->getType());
     }
 }
 

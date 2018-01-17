@@ -87,10 +87,6 @@ class TransferPersister implements TransferPersisterInterface
         
         $this->save($association);
         
-        if ($property->hasAnnotation(BelongsTo::class)) {
-            $this->persistBelongsTo($object, $association, $metadata, $property);
-        }
-        
         if ($property->hasAnnotation(HasOne::class)) {
             $this->persistHas($object, $association, $property, $property->getAnnotation(HasOne::class));
         }
@@ -100,20 +96,7 @@ class TransferPersister implements TransferPersisterInterface
         }
     }
     
-    private function persistBelongsTo($object, $association, TransferMetadata $metadata, PropertyMetadata $property)
-    {
-        /* @var $belongsTo BelongsTo */
-        $belongsTo       = $property->getAnnotation(BelongsTo::class);
-        $foreignProperty = $metadata->propertyMetadata[$belongsTo->foreignField];
-        $foreignId       = $foreignProperty->getValue($object);
-        $currentId       = $this->getIdValue($association);
-
-        if ($foreignId !== $currentId) {
-            $foreignProperty->setValue($object, $currentId);
-        }
-    }
-    
-    private function persistHas($object, $association, PropertyMetadata $property, $annotation) 
+    private function persistHas($object, $association, PropertyMetadata $property, $annotation)
     {
         $type                  = preg_replace('/\[\]$/', '', $property->type);
         $relationClassMetadata = $this->metadataFactory->getMetadataForClass($type);

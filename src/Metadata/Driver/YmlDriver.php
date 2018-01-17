@@ -73,7 +73,11 @@ class YmlDriver implements DriverInterface
             $annotations[Bindings::class] = $bindings = new Bindings();
             $name                         = $reflectionProperty->name;
 
-            if ($name == ($yml['id'] ?? null)) {
+            $idMapping = $yml['id'] ?? [];
+
+            $ids = is_scalar($idMapping) ? [$idMapping] : $idMapping;
+
+            if (in_array($name, $ids)) {
                 $annotations[Id::class] = new Id();
             }
             

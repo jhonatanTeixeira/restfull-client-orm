@@ -124,11 +124,12 @@ class ProxyFactory implements ProxyFactoryInterface
         $criteria = [];
         
         foreach ($belongsTo->foreignField as $field) {
-            $criteria[$field] = $metadata->propertyMetadata[$field]->getValue($object);
+            $criteria[] = sprintf('%s=%s', $field, $metadata->propertyMetadata[$field]->getValue($object));
+            //$criteria[$field] = $metadata->propertyMetadata[$field]->getValue($object);
         }
 
         $data = $transferManager->getRepository($type)
-            ->findOneBy($criteria);
+            ->find(implode(';', $criteria));
 
         $propertyMetadata->setValue($object, $data);
     }

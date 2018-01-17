@@ -42,18 +42,23 @@ class TransferManagerRelationshipsTest extends TestCase
             ->getMock()
         ;
         
-        $repository->expects($this->exactly(2))
+        $repository->expects($this->exactly(3))
             ->method('find')
-            ->with(1)
-            ->willReturn($responseStub = $proxyFactory->createProxy(new RelationshipsStub(), $transferManager))
+            ->withConsecutive(
+                [1],
+                [1],
+                ['multiOne=1;multiTwo=1']
+            )
+            ->willReturnOnConsecutiveCalls(
+                $responseStub = $proxyFactory->createProxy(new RelationshipsStub(), $transferManager),
+                $responseStub,
+                $multiStub = $proxyFactory->createProxy(new MultiStub(), $transferManager)
+            )
         ;
         
-        $repository->expects($this->exactly(2))
+        $repository->expects($this->once())
             ->method('findOneBy')
-            ->withConsecutive(
-                [['one' => 1]],
-                [['multiOne' => 1, 'multiTwo' => 1]]
-            )
+            ->with(['one' => 1])
             ->willReturn($responseStub)
         ;
         
@@ -65,7 +70,13 @@ class TransferManagerRelationshipsTest extends TestCase
 
         $transferManager->expects($this->exactly(5))
             ->method('getRepository')
-            ->with(RelationshipsStub::class)
+            ->withConsecutive(
+                [RelationshipsStub::class],
+                [RelationshipsStub::class],
+                [RelationshipsStub::class],
+                [RelationshipsStub::class],
+                [MultiStub::class]
+            )
             ->willReturn($repository);
         ;
         
@@ -94,18 +105,25 @@ class TransferManagerRelationshipsTest extends TestCase
             ->setMethods(['getRepository'])
             ->getMock()
         ;
-        
-        $repository->expects($this->exactly(2))
+
+        $repository->expects($this->exactly(3))
             ->method('find')
-            ->with(1)
-            ->willReturn($responseStub = $proxyFactory->createProxy(new RelationshipsStubYml(), $transferManager))
+            ->withConsecutive(
+                [1],
+                [1],
+                ['multiOne=1;multiTwo=1']
+            )
+            ->willReturnOnConsecutiveCalls(
+                $responseStub = $proxyFactory->createProxy(new RelationshipsStubYml(), $transferManager),
+                $responseStub,
+                $multiStub = $proxyFactory->createProxy(new RelationshipsStubYml(), $transferManager)
+            )
         ;
 
-        $repository->expects($this->exactly(2))
+        $repository->expects($this->exactly(1))
             ->method('findOneBy')
             ->withConsecutive(
-                [['one' => 1]],
-                [['multiOne' => 1, 'multiTwo' => 1]]
+                [['one' => 1]]
             )
             ->willReturn($responseStub)
         ;
@@ -253,44 +271,41 @@ class TransferManagerRelationshipsTest extends TestCase
                     'belongs_multi' => null,
                 ]]],
                 [
-                    'GET', '/foo', [
-                        'headers' => ['Content-Type' => 'application/json'], 
-                        'query' => ['multiTwo' => 3, 'multiOne' => 3]
+                    'GET', '/bar/multiOne=3;multiTwo=3', [
+                        'headers' => ['Content-Type' => 'application/json']
                     ]
                 ],
-                ['PUT', '/foo/1', ['json' => [
-                    'id' => 1,
-                    'belongs' => 2,
-                    'one' => 1,
-                    'many' => 1,
-                    'multi_one' => 1,
-                    'multi_two' => 1,
-                    'belongs_to' => [
-                        'id' => 2,
-                        'belongs' => 4,
-                        'one' => 1,
-                        'many' => 1,
-                        'multi_one' => 1,
-                        'multi_two' => 1,
-                        'belongs_to' => null,
-                        'has_one' => null,
-                        'has_many' => null,
-                        'belongs_multi' => null
-                    ],
-                    'has_one' => null,
-                    'has_many' => null,
-                    'belongs_multi' => [
-                        'id' => 2,
-                        'belongs' => 4,
-                        'one' => 1,
-                        'many' => 1,
-                        'multi_one' => 1,
-                        'multi_two' => 1,
-                        'belongs_to' => null,
-                        'has_one' => null,
-                        'has_many' => null,
-                        'belongs_multi' => null
-                    ],
+//                ['PUT', '/foo/1', ['json' => [
+//                    'id' => 1,
+//                    'belongs' => 2,
+//                    'one' => 1,
+//                    'many' => 1,
+//                    'multi_one' => 1,
+//                    'multi_two' => 1,
+//                    'belongs_to' => [
+//                        'id' => 2,
+//                        'belongs' => 4,
+//                        'one' => 1,
+//                        'many' => 1,
+//                        'multi_one' => 1,
+//                        'multi_two' => 1,
+//                        'belongs_to' => null,
+//                        'has_one' => null,
+//                        'has_many' => null,
+//                        'belongs_multi' => null
+//                    ],
+//                    'has_one' => null,
+//                    'has_many' => null,
+//                    'belongs_multi' => [
+//                        'multi_one' => 1,
+//                        'multi_two' => 1,
+//                        'name'      => 'foo',
+//                    ],
+//                ]]],
+                ['PUT', '/bar/multiOne=3;multiTwo=3', ['json' => [
+                    'multi_one' => 3,
+                    'multi_two' => 3,
+                    'name'      => 'bar'
                 ]]]
             )
             ->willReturnOnConsecutiveCalls(
@@ -298,8 +313,9 @@ class TransferManagerRelationshipsTest extends TestCase
                 new Response(200, [], json_encode(['id' => 3])),
                 new Response(200, [], json_encode(['id' => 2, 'belongs' => 4])),
                 new Response(200, [], json_encode(['id' => 1, 'belongs' => 2])),
-                new Response(200, [], json_encode([['id' => 5, 'belongs' => 2, 'multi_two' => 3, 'multi_one' => 3]])),
-                new Response(200, [], json_encode(['id' => 1]))
+                new Response(200, [], json_encode(['multi_two' => 3, 'multi_one' => 3])),
+                new Response(200, [], json_encode(['id' => 1])),
+                new Response(200, [], json_encode(['multi_two' => 3, 'multi_one' => 3]))
             )
         ;
         
@@ -326,10 +342,12 @@ class TransferManagerRelationshipsTest extends TestCase
         $stub1->setBelongsTo($stub2);
         $transferManager->flush();
         
-        $stub1->getBelongsMulti();
+        $multi = $stub1->getBelongsMulti();
         $transferManager->flush();
 
-        $stub1->setBelongsMulti($stub2);
+        //$stub1->setBelongsMulti(new MultiStub());
+        $multi->setName('bar');
+
         $transferManager->flush();
     }
 
@@ -475,7 +493,7 @@ class RelationshipsStub
     /**
      * @BelongsTo(foreignField={"multiOne", "multiTwo"})
      *
-     * @var RelationshipsStub
+     * @var MultiStub
      */
     private $belongsMulti;
 
@@ -550,14 +568,69 @@ class RelationshipsStub
         $this->id = $id;
     }
 
-    public function getBelongsMulti(): RelationshipsStub
+    public function getBelongsMulti(): MultiStub
     {
         return $this->belongsMulti;
     }
 
-    public function setBelongsMulti(RelationshipsStub $belongsMulti)
+    public function setBelongsMulti(MultiStub $belongsMulti)
     {
         $this->belongsMulti = $belongsMulti;
+    }
+}
+
+/**
+ * @Resource(client="foo", route="/bar")
+ */
+class MultiStub
+{
+    /**
+     * @Id()
+     *
+     * @var int
+     */
+    private $multiOne = 1;
+
+    /**
+     * @Id()
+     *
+     * @var int
+     */
+    private $multiTwo = 1;
+
+    /**
+     * @var string
+     */
+    private $name = 'foo';
+
+    public function getMultiOne(): int
+    {
+        return $this->multiOne;
+    }
+
+    public function setMultiOne(int $multiOne)
+    {
+        $this->multiOne = $multiOne;
+    }
+
+    public function getMultiTwo(): int
+    {
+        return $this->multiTwo;
+    }
+
+    public function setMultiTwo(int $multiTwo)
+    {
+        $this->multiTwo = $multiTwo;
+    }
+
+    public function getName(): string
+    {
+        return $this->name;
+    }
+
+    public function setName(string $name)
+    {
+        $this->name = $name;
     }
 }
 

@@ -1,0 +1,4 @@
+resource: 
+    client: some_client
+    route: http://lorem-dolor.cc/some/route
+id: [idOne, idTwo]

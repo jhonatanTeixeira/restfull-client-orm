@@ -20,20 +20,27 @@ use Vox\Webservice\Mapping\Id;
 class TransferMetadata extends ClassMetadata
 {
     /**
-     * @var PropertyMetadata
+     * @var PropertyMetadata[]
      */
-    public $id;
+    public $id = [];
     
     /**
      * @var PropertyMetadata[]
      */
     public $associations = [];
-    
+
+    public function __construct($name)
+    {
+        parent::__construct($name);
+
+        $this->id = new IdMetadata();
+    }
+
     public function addPropertyMetadata(BasePropertyMetadata $metadata)
     {
         if ($metadata instanceof PropertyMetadata) {
             if ($id = $metadata->getAnnotation(Id::class)) {
-                $this->id = $metadata;
+                $this->id->append($metadata);
             }
         }
         
