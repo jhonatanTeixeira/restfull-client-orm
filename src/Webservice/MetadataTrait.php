@@ -24,10 +24,14 @@ trait MetadataTrait
     
     private function getClassMetadata($object): TransferMetadata
     {
+        if ($object instanceof AccessInterceptorValueHolderInterface) {
+            $object = $object->getWrappedValueHolderValue();
+        }
+
         if (is_object($object)) {
             $object = get_class($object);
         }
-        
+
         return $this->metadataFactory->getMetadataForClass($object);
     }
 }

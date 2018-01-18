@@ -429,7 +429,7 @@ class TransferManagerTest extends TestCase
                 ['Content-Type' => 'application/json'],
                 json_encode([
                     'id' => 1,
-                    'relation' => 10
+                    'relation' => 15
                 ])
             ),
             new Response(
@@ -445,7 +445,7 @@ class TransferManagerTest extends TestCase
                 ['Content-Type' => 'application/json'],
                 json_encode([
                     'id' => 2,
-                    'relation' => 15
+                    'relation' => 10
                 ])
             )
         );
@@ -462,7 +462,7 @@ class TransferManagerTest extends TestCase
 
         $this->webserviceClient->expects($this->exactly(3))
             ->method('post')
-            ->withConsecutive([$newRelation1], [$newRelated1], [$newRelation2])
+            ->withConsecutive([$newRelation2], [$newRelation1], [$newRelated1])
             ->willReturnCallback(function ($transferName) {
                 $contents = $this->client->get('/abc')->getBody()->getContents();
                 return $this->serializer->denormalize(json_decode($contents, true), $transferName);

@@ -241,12 +241,13 @@ class TransferManagerRelationshipsTest extends TestCase
         
         $guzzleClient = $this->createMock(Client::class);
         
-        $guzzleClient->expects($this->exactly(6))
+        $guzzleClient->expects($this->exactly(9))
             ->method('request')
             ->withConsecutive(
-                ['GET', '/foo/1', ['headers' => ['Content-Type' => 'application/json']]],
-                ['GET', '/foo/3', ['headers' => ['Content-Type' => 'application/json']]],
-                ['GET', '/foo/2', ['headers' => ['Content-Type' => 'application/json']]],
+                ['GET', '/foo/1', ['headers' => ['Content-Type' => 'application/json']]],//#0
+                ['GET', '/foo/3', ['headers' => ['Content-Type' => 'application/json']]],//#1
+                // first flush, find a registry, gets its relationship, nothing updated
+                ['GET', '/foo/2', ['headers' => ['Content-Type' => 'application/json']]],//#2
                 ['PUT', '/foo/1', ['json' => [
                     'id' => 1,
                     'belongs' => 2,
@@ -269,44 +270,58 @@ class TransferManagerRelationshipsTest extends TestCase
                     'has_one' => null,
                     'has_many' => null,
                     'belongs_multi' => null,
-                ]]],
+                ]]],//#3
+                // second flush, replace a belongs to relationship with another coming fom the webservice
                 [
                     'GET', '/bar/multiOne=3;multiTwo=3', [
                         'headers' => ['Content-Type' => 'application/json']
                     ]
-                ],
-//                ['PUT', '/foo/1', ['json' => [
-//                    'id' => 1,
-//                    'belongs' => 2,
-//                    'one' => 1,
-//                    'many' => 1,
-//                    'multi_one' => 1,
-//                    'multi_two' => 1,
-//                    'belongs_to' => [
-//                        'id' => 2,
-//                        'belongs' => 4,
-//                        'one' => 1,
-//                        'many' => 1,
-//                        'multi_one' => 1,
-//                        'multi_two' => 1,
-//                        'belongs_to' => null,
-//                        'has_one' => null,
-//                        'has_many' => null,
-//                        'belongs_multi' => null
-//                    ],
-//                    'has_one' => null,
-//                    'has_many' => null,
-//                    'belongs_multi' => [
-//                        'multi_one' => 1,
-//                        'multi_two' => 1,
-//                        'name'      => 'foo',
-//                    ],
-//                ]]],
+                ],//#4
+                //third flush, gets a multiple id relationship and does nothing
                 ['PUT', '/bar/multiOne=3;multiTwo=3', ['json' => [
                     'multi_one' => 3,
                     'multi_two' => 3,
                     'name'      => 'bar'
-                ]]]
+                ]]],//#5
+                // fourth flush, changes a non id property of the multiple id relationship, update occurs
+                ['PUT', '/bar/multiOne=3;multiTwo=2', ['json' => [
+                    'multi_one' => 3,
+                    'multi_two' => 2,
+                    'name'      => 'bar'
+                ]]],//#6
+                ['PUT', '/foo/1', ['json' => [
+                    'id' => 1,
+                    'belongs' => 2,
+                    'one' => 1,
+                    'many' => 1,
+                    'multi_one' => 3,
+                    'multi_two' => 2,
+                    'belongs_to' => [
+                        'id' => 2,
+                        'belongs' => 4,
+                        'one' => 1,
+                        'many' => 1,
+                        'multi_one' => 1,
+                        'multi_two' => 1,
+                        'belongs_to' => null,
+                        'has_one' => null,
+                        'has_many' => null,
+                        'belongs_multi' => null
+                    ],
+                    'has_one' => null,
+                    'has_many' => null,
+                    'belongs_multi' => [
+                        'multi_one' => 3,
+                        'multi_two' => 2,
+                        'name'      => 'bar',
+                    ],
+                ]]],//#7
+                //fifith flush, update an id on a multiple relationship, updates relationship and main object
+                ['POST', '/bar', ['json' => [
+                    'multi_one' => 3,
+                    'multi_two' => 2,
+                    'name'      => 'foo'
+                ]]]//#8
             )
             ->willReturnOnConsecutiveCalls(
                 new Response(200, [], json_encode(['id' => 1, 'belongs' => 3, 'multi_two' => 3, 'multi_one' => 3])),
@@ -315,7 +330,9 @@ class TransferManagerRelationshipsTest extends TestCase
                 new Response(200, [], json_encode(['id' => 1, 'belongs' => 2])),
                 new Response(200, [], json_encode(['multi_two' => 3, 'multi_one' => 3])),
                 new Response(200, [], json_encode(['id' => 1])),
-                new Response(200, [], json_encode(['multi_two' => 3, 'multi_one' => 3]))
+                new Response(200, [], json_encode(['multi_two' => 2, 'multi_one' => 3])),
+                new Response(200, [], json_encode(['id' => 1])),
+                new Response(200, [], json_encode(['multi_two' => 2, 'multi_one' => 3]))
             )
         ;
         
@@ -345,8 +362,15 @@ class TransferManagerRelationshipsTest extends TestCase
         $multi = $stub1->getBelongsMulti();
         $transferManager->flush();
 
-        //$stub1->setBelongsMulti(new MultiStub());
         $multi->setName('bar');
+
+        $transferManager->flush();
+
+        $multi->setMultiTwo(2);
+
+        $transferManager->flush();
+
+        $stub1->setBelongsMulti(new MultiStub(null, null));
 
         $transferManager->flush();
     }
@@ -427,6 +451,68 @@ class TransferManagerRelationshipsTest extends TestCase
 
         $transferManager->remove($one);
         $transferManager->remove($two);
+
+        $transferManager->flush();
+    }
+
+    public function testHasRelationships()
+    {
+        $proxyFactory = new ProxyFactory();
+
+        $metadataFactory = new MetadataFactory(
+            new AnnotationDriver(
+                new AnnotationReader(),
+                TransferMetadata::class
+            )
+        );
+
+        $clientRegistry = new ClientRegistry();
+
+        $guzzleClient = $this->createMock(Client::class);
+
+        $guzzleClient->expects($this->exactly(3))
+            ->method('request')
+            ->withConsecutive(
+                ['GET', '/foo/1', ['headers' => ['Content-Type' => 'application/json']]],//#0
+                ['GET', '/foo', ['headers' => ['Content-Type' => 'application/json'], 'query' => ['many' => 1]]],//#1
+                ['POST', '/foo', ['json' => [
+                    'id' => null,
+                    'belongs' => 1,
+                    'one' => 1,
+                    'many' => 1,
+                    'multi_one' => 1,
+                    'multi_two' => 1,
+                    'belongs_to' => null,
+                    'has_one' => null,
+                    'has_many' => null,
+                    'belongs_multi' => null,
+                ]]]//#2
+            )
+            ->willReturnOnConsecutiveCalls(
+                new Response(200, [], json_encode(['id' => 1])),
+                new Response(200, [], json_encode([])),
+                new Response(200, [], json_encode(['id' => 2]))
+            )
+        ;
+
+        $clientRegistry->set('foo', $guzzleClient);
+
+        $serializer = new Serializer([
+            new ObjectNormalizer(
+                new Normalizer($metadataFactory),
+                new Denormalizer(new ObjectHydrator($metadataFactory))
+            ),
+            [new JsonEncoder()]
+        ]);
+
+        $webserviceClient = new WebserviceClient($clientRegistry, $metadataFactory, $serializer, $serializer);
+
+        $transferManager = new TransferManager($metadataFactory, $webserviceClient, $proxyFactory);
+
+        /* @var $one RelationshipsStub */
+        $one = $transferManager->getRepository(RelationshipsStub::class)->find(1);
+
+        $one->getHasMany()->add(new RelationshipsStub(null));
 
         $transferManager->flush();
     }
@@ -532,7 +618,7 @@ class RelationshipsStub
         return $this->hasOne;
     }
 
-    public function getHasMany(): array
+    public function getHasMany()
     {
         return $this->hasMany;
     }
@@ -602,6 +688,12 @@ class MultiStub
      * @var string
      */
     private $name = 'foo';
+
+    public function __construct($multiOne = 1, $multiTwo = 1)
+    {
+        $this->multiOne = $multiOne;
+        $this->multiTwo = $multiTwo;
+    }
 
     public function getMultiOne(): int
     {

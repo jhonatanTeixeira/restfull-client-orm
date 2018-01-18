@@ -78,4 +78,9 @@ class IdMetadata
 
         return $this->ids[0]->type;
     }
+
+    public function getIds()
+    {
+        return $this->ids;
+    }
 }
