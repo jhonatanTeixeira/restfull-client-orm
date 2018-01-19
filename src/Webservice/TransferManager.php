@@ -105,7 +105,7 @@ class TransferManager implements TransferManagerInterface
         return $this->metadataFactory;
     }
 
-    public function getRepository($className): ObjectRepository
+    public function getRepository($className): TransferRepositoryInterface
     {
         return new TransferRepository(
             $className,

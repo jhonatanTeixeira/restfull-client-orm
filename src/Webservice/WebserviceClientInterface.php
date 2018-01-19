@@ -16,4 +16,6 @@ interface WebserviceClientInterface
     public function put($transfer);
     
     public function delete(string $transferName, $id);
+
+    public function getByCriteria(CriteriaInterface $criteria, string $transferName);
 }

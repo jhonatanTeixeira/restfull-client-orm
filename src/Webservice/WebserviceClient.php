@@ -4,6 +4,8 @@ namespace Vox\Webservice;
 
 use GuzzleHttp\ClientInterface;
 use GuzzleHttp\Psr7\Request;
+use GuzzleHttp\Psr7\Response;
+use function GuzzleHttp\Psr7\stream_for;
 use Metadata\MetadataFactoryInterface;
 use RuntimeException;
 use Symfony\Component\Serializer\Normalizer\DenormalizerInterface;
@@ -88,7 +90,7 @@ class WebserviceClient implements WebserviceClientInterface
         $client   = $this->getClient($transferName);
         $route    = sprintf('%s/%s', $resource->route, $id);
         $response = $client->request('GET', $route, ['headers' => ['Content-Type' => 'application/json']]);
-        
+
         if ($response->getStatusCode() >= 300) {
             throw new WebserviceResponseException($response, new Request('GET', $route));
         }
@@ -135,6 +137,24 @@ class WebserviceClient implements WebserviceClientInterface
         }
 
         $this->denormalizer->denormalize(json_decode($response->getBody()->getContents(), true), $transfer);
+    }
+
+    public function getByCriteria(CriteriaInterface $criteria, string $transferName)
+    {
+        $client   = $this->getClient($transferName);
+
+        $request = $criteria->createRequest($this->getMetadata($transferName));
+
+        $response = $client->send($request);
+
+        if ($criteria->getOperationType() == CriteriaInterface::OPERATION_TYPE_ITEM) {
+            $contents = $response->getBody()->getContents();
+            return $this->denormalizer->denormalize(json_decode($contents, true), $transferName);
+        }
+
+        if ($criteria->getOperationType() == CriteriaInterface::OPERATION_TYPE_COLLECTION) {
+            return new TransferCollection($transferName, $this->denormalizer, $response);
+        }
     }
 
     private function getClient(string $transferName, Resource $resource = null): ClientInterface

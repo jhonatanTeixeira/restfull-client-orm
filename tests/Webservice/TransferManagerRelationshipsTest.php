@@ -5,7 +5,6 @@ namespace Vox\Webservice;
 use Doctrine\Common\Annotations\AnnotationReader;
 use Doctrine\Common\Collections\ArrayCollection;
 use Doctrine\Common\Collections\Collection;
-use Doctrine\Common\Persistence\ObjectRepository;
 use GuzzleHttp\Client;
 use GuzzleHttp\Psr7\Response;
 use Metadata\MetadataFactory;
@@ -25,7 +24,6 @@ use Vox\Webservice\Mapping\Id;
 use Vox\Webservice\Mapping\Resource;
 use Vox\Webservice\Metadata\TransferMetadata;
 use Vox\Webservice\Proxy\ProxyFactory;
-use function GuzzleHttp\json_encode;
 
 class TransferManagerRelationshipsTest extends TestCase
 {
@@ -34,7 +32,7 @@ class TransferManagerRelationshipsTest extends TestCase
         $metadataFactory = new MetadataFactory(new AnnotationDriver(new AnnotationReader(), TransferMetadata::class));
         $proxyFactory = new ProxyFactory();
         
-        $repository = $this->createMock(ObjectRepository::class);
+        $repository = $this->createMock(TransferRepositoryInterface::class);
         
         $transferManager = $this->getMockBuilder(TransferManager::class)
             ->setConstructorArgs([$metadataFactory, $this->createMock(WebserviceClient::class)])
@@ -98,7 +96,7 @@ class TransferManagerRelationshipsTest extends TestCase
         );
         $proxyFactory = new ProxyFactory();
         
-        $repository = $this->createMock(ObjectRepository::class);
+        $repository = $this->createMock(TransferRepositoryInterface::class);
         
         $transferManager = $this->getMockBuilder(TransferManager::class)
             ->setConstructorArgs([$metadataFactory, $this->createMock(WebserviceClient::class)])

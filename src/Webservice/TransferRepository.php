@@ -2,8 +2,10 @@
 
 namespace Vox\Webservice;
 
+use Doctrine\Common\Collections\ArrayCollection;
 use Doctrine\Common\Collections\Collection;
 use Doctrine\Common\Persistence\ObjectRepository;
+use Vox\Webservice\Exception\WebserviceResponseException;
 use Vox\Webservice\Proxy\ProxyFactoryInterface;
 
 /**
@@ -12,7 +14,7 @@ use Vox\Webservice\Proxy\ProxyFactoryInterface;
  * 
  * @author Jhonatan Teixeira <jhonatan.teixeira@gmail.com>
  */
-final class TransferRepository implements ObjectRepository
+final class TransferRepository implements TransferRepositoryInterface
 {
     private $transferName;
     
@@ -73,36 +75,93 @@ final class TransferRepository implements ObjectRepository
     public function findAll(): Collection
     {
         $collection = $this->webserviceClient->cGet($this->transferName);
-        
-        $collection->setObjectStorage($this->objectStorage)
-            ->setTransferManager($this->transferManager)
-            ->setProxyFactory($this->proxyFactory);
-        
+
+        $this->prepareCollection($collection);
+
         return $collection;
     }
 
     public function findBy(array $criteria, array $orderBy = null, $limit = null, $offset = null): Collection
     {
-        $collection = $this->webserviceClient->cGet($this->transferName, $criteria);
-        
-        $collection->setObjectStorage($this->objectStorage)
-            ->setTransferManager($this->transferManager)
-            ->setProxyFactory($this->proxyFactory);
-        
+        try {
+            $collection = $this->webserviceClient->cGet($this->transferName, $criteria);
+        } catch (WebserviceResponseException $exception) {
+            if ($exception->getCode() == '404') {
+                return new ArrayCollection();
+            }
+
+            throw $exception;
+        }
+
+        $this->prepareCollection($collection);
+
         return $collection;
     }
 
     public function findOneBy(array $criteria)
     {
-        $collection = $this->webserviceClient->cGet($this->transferName, $criteria);
-        
-        $collection->setObjectStorage($this->objectStorage)
-            ->setTransferManager($this->transferManager)
-            ->setProxyFactory($this->proxyFactory);
-        
+        try {
+            $collection = $this->webserviceClient->cGet($this->transferName, $criteria);
+        } catch (WebserviceResponseException $exception) {
+            if ($exception->getCode() == '404') {
+                return null;
+            }
+
+            throw $exception;
+        }
+
+        $this->prepareCollection($collection);
+
         if ($collection->count() > 0) {
             return $collection->first();
         }
+    }
+
+    public function findByCriteria(CriteriaInterface $criteria): Collection
+    {
+        $criteria->withOperationType(CriteriaInterface::OPERATION_TYPE_COLLECTION);
+
+        try {
+            $collection = $this->webserviceClient->getByCriteria($criteria, $this->transferName);
+        } catch (WebserviceResponseException $ex) {
+            if ($ex->getCode() == '404') {
+                return new ArrayCollection();
+            }
+
+            throw $ex;
+        }
+
+        $this->prepareCollection($collection);
+
+        return $collection;
+    }
+
+    public function findOneByCriteria(CriteriaInterface $criteria)
+    {
+        $criteria->withOperationType(CriteriaInterface::OPERATION_TYPE_ITEM);
+
+        try {
+            $transfer = $this->webserviceClient->getByCriteria($criteria, $this->transferName);
+        } catch (WebserviceResponseException $exception) {
+            if ($exception->getCode() == '404') {
+                return null;
+            }
+
+            throw $exception;
+        }
+
+        if ($transfer && !$this->objectStorage->contains($transfer)) {
+            $this->objectStorage->attach($transfer);
+        }
+
+        return $transfer;
+    }
+
+    private function prepareCollection(TransferCollection $collection)
+    {
+        $collection->setObjectStorage($this->objectStorage)
+            ->setTransferManager($this->transferManager)
+            ->setProxyFactory($this->proxyFactory);
     }
 
     public function getClassName(): string
