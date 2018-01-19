@@ -20,7 +20,7 @@ use Vox\Webservice\Mapping\Id;
 class TransferMetadata extends ClassMetadata
 {
     /**
-     * @var PropertyMetadata[]
+     * @var IdMetadata
      */
     public $id = [];
     

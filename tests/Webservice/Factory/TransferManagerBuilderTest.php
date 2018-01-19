@@ -13,6 +13,11 @@ use Vox\Webservice\WebserviceClientInterface;
 
 class TransferManagerBuilderTest extends TestCase
 {
+    protected function setUp()
+    {
+        exec('rm -rf /tmp/*.php');
+    }
+
     public function testShouldBuildTransferManagerAnnotationFileCache()
     {
         $builder = new TransferManagerBuilder();
@@ -29,7 +34,7 @@ class TransferManagerBuilderTest extends TestCase
 
         $metadata = $transerManager->getClassMetadata(Testing::class);
 
-        $this->assertEquals('string', $metadata->id->type);
+        $this->assertEquals('string', $metadata->id->getType());
     }
 
     public function testShouldBuildTransferManagerYmlCached()
