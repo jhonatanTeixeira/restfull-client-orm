@@ -21,7 +21,7 @@ use Vox\Webservice\Mapping\Resource;
 use Vox\Webservice\Metadata\TransferMetadata;
 use Vox\Webservice\Proxy\ProxyFactory;
 
-class CriteriaTest extends TestCase
+class TransferRepositoryTest extends TestCase
 {
     /**
      * @var MockObject
@@ -63,50 +63,61 @@ class CriteriaTest extends TestCase
         $this->transferManager = $transferManager = new TransferManager($metadataFactory, $webserviceClient, $proxyFactory);
     }
 
-    public function testShouldFetchCollection()
+    public function testShouldReturnEmptyCollection()
     {
         $this->guzzleClient->expects($this->once())
-            ->method('send')
-            ->with(new Request('GET', '/foo?name=abc', ['Content-Type' => 'application/json']))
-            ->willReturn(new Response(200, [], json_encode([
-                ['id' => 1, 'name' => 'abc'],
-                ['id' => 2, 'name' => 'abc'],
-            ])));
+            ->method('request')
+            ->willReturn(new Response(404))
         ;
 
-        $criteria = new Criteria();
-        $criteria->withQuery(['name' => 'abc']);
+        $collection = $this->transferManager->getRepository(RepositoryStub::class)->findBy(['name' => 'foo']);
 
-        $collection = $this->transferManager->getRepository(CriteriaStub::class)->findByCriteria($criteria);
-
-        $this->assertCount(2, $collection);
+        $this->assertCount(0, $collection);
     }
 
-    public function testShouldFetchItem()
+    public function testShouldReturnNull()
+    {
+        $this->guzzleClient->expects($this->once())
+            ->method('request')
+            ->willReturn(new Response(404))
+        ;
+
+        $transfer = $this->transferManager->getRepository(RepositoryStub::class)->findOneBy(['name' => 'foo']);
+
+        $this->assertNull($transfer);
+    }
+
+    public function testShouldReturnEmptyCollectionByCriteria()
     {
         $this->guzzleClient->expects($this->once())
             ->method('send')
-            ->with(new Request('GET', '/foo/uf/1/city/bar?name=abc', ['Content-Type' => 'application/json']))
-            ->willReturn(new Response(200, [], json_encode(
-                ['id' => 1, 'name' => 'abc']
-            )));
+            ->willReturn(new Response(404))
         ;
 
-        $criteria = new Criteria();
-        $criteria->withParams(['uf' => 1])
-            ->setParam('city', 'bar')
-            ->setQuery('name', 'abc');
+        $collection = $this->transferManager->getRepository(RepositoryStub::class)
+            ->findByCriteria(new Criteria());
 
-        $transfer = $this->transferManager->getRepository(CriteriaStub::class)->findOneByCriteria($criteria);
+        $this->assertCount(0, $collection);
+    }
 
-        $this->assertEquals(1, $transfer->getId());
+    public function testShouldReturnNullByCriteria()
+    {
+        $this->guzzleClient->expects($this->once())
+            ->method('send')
+            ->willReturn(new Response(404))
+        ;
+
+        $transfer = $this->transferManager->getRepository(RepositoryStub::class)
+            ->findOneByCriteria(new Criteria());
+
+        $this->assertNull($transfer);
     }
 }
 
 /**
  * @Resource(client="foo", route="/foo")
  */
-class CriteriaStub
+class RepositoryStub
 {
     /**
      * @Id()

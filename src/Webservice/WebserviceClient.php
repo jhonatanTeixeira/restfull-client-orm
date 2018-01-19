@@ -66,7 +66,7 @@ class WebserviceClient implements WebserviceClientInterface
         $response = $client->request('GET', $resource->route, $options);
 
         if ($response->getStatusCode() >= 300) {
-            throw new WebserviceResponseException($response, new Request('GET', $response->route, $options));
+            throw new WebserviceResponseException($response, new Request('GET', $resource->route, $options));
         }
 
         return new TransferCollection($transferName, $this->denormalizer, $response);
@@ -146,6 +146,10 @@ class WebserviceClient implements WebserviceClientInterface
         $request = $criteria->createRequest($this->getMetadata($transferName));
 
         $response = $client->send($request);
+
+        if ($response->getStatusCode() >= 300) {
+            throw new WebserviceResponseException($response, $request);
+        }
 
         if ($criteria->getOperationType() == CriteriaInterface::OPERATION_TYPE_ITEM) {
             $contents = $response->getBody()->getContents();

@@ -74,7 +74,8 @@ class Criteria implements CriteriaInterface
             $route .= "/$name/$value";
         }
 
-        $route = preg_replace(".(/{2,})|(/+)$.", "/", $route);
+        $route = preg_replace('.(/{2,}).', '/', $route);
+        $route = preg_replace('.(/+)$.', '', $route);
 
         if (!empty($this->query)) {
             $route .= '?' . http_build_query($this->query);

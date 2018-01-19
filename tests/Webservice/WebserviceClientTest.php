@@ -27,6 +27,9 @@ use Vox\Webservice\Metadata\TransferMetadata;
 
 class WebserviceClientTest extends TestCase
 {
+    /**
+     * @var WebserviceClient
+     */
     private $webserviceClient;
     
     private $serializer;
@@ -327,7 +330,19 @@ class WebserviceClientTest extends TestCase
             $this->assertEquals(400, $ex->getCode());
             $this->assertEquals('POST', $ex->getRequest()->getMethod());
         }
+    }
 
+    /**
+     * @expectedException Vox\Webservice\Exception\WebserviceResponseException
+     * @expectedExceptionCode 404
+     */
+    public function testShouldReturnEmptyCollection()
+    {
+        $this->mockHandler->append(
+            new Response(404)
+        );
+
+        $this->webserviceClient->cGet(SomeStub::class);
     }
 }
 
