@@ -170,31 +170,7 @@ class RelationStub
 }
 ```
 
-## 4. Using the Transfer Manager
-
-```php
-// fetches a single transfer from the webservice
-$stub = $transferManager->find(Stub::class, 1);
-// thanks to the proxy pattern and the mapping the relation can be retrieved lazily and automaticly
-$relation = $stub->getRelation();
-
-// changes to a proxyed transfer will be tracked
-$relation->setName('lorem ipsum');
-
-$stub2 = $transferManager->find(Stub::class, 2);
-$stub2->setRelation(new Relation());
-
-$stub3 = new Stub();
-$stub3->setRelation(new Relation());
-
-// any new created transfer must be persisted into the unity of work, so it can be posted by the persister
-$transferManager->persist($stub3);
-
-// flushes all changes, all posts, puts, etc. will happen here
-$transferManager->flush();
-```
-
-## 5. the yml driver
+### 3.1. the yml driver
 
 if you want to leave the mapping metadata out of your object to keep it clean or keep it decoupled from this lib
 you can also use the yml metadata reader
@@ -209,7 +185,7 @@ $metadataFactory = new Metadata\MetadataFactory(
 );
 ```
 
-### 5.1.1 - Yml mapping
+### 3.1.1 - Yml mapping
 
 the yml mapping must be named after the complete class namespace replacing backslashes by dots. 
 Ex: /propject/metadata/Project.Package.ClassName.yml
@@ -241,3 +217,112 @@ parameters:
         hasMany:
             foreignField: blogPostId
 ```
+
+### 3.2. Composite Ids
+
+Composite id's are supported, however there are some limitations.
+
+To map composite ids using annotations is really simple
+
+```php
+class Foo
+{
+    /**
+     * @Id()
+     *
+     * @var int
+     */
+    private $firstId;
+    
+    /**
+     * @Id()
+     *
+     * @var int
+     */
+    private $secondId;
+}
+```
+The yaml mapping is also trivial
+
+```yaml
+resource: 
+    client: some_client
+    route: http://lorem-dolor.cc/some/route
+
+id: [firstId, secondId]
+```
+
+### 3.2.1 Mapping relationships with composite ids transfers
+For now it is only possible to map belongs to relationships when linking to a composite ids transfer.
+
+```php
+class Bar
+{
+    /**
+     * @var int
+     */
+    private $foreignKeyOne;
+    
+    /**
+     * @var int
+     */
+    private $foreignKeyTwo;
+    
+   /**
+    * All you need is to use an array of foreign keys instead of a single one
+    *
+    * @BelongsTo(foreignField={"foreignKeyOne", "foreignKeyTwo"})
+    *
+    * @var Relationship
+    */
+    private $relationship;
+}
+```
+
+```yaml
+resource: 
+    client: some_client
+    route: http://lorem-dolor.cc/some/route
+
+id: id
+
+parameters:
+    relationship:
+        belongsTo: 
+            foreignField: [foreignKeyOne, foreignKeyTwo]
+```
+
+There are some limitations however, never use setters for ids or else it will not be able to post new transfers. new transfers needs to pull the ids from the foreign keys automaticaly by the unity of work
+
+## 4. Using the Transfer Manager
+
+```php
+// fetches a single transfer from the webservice
+$stub = $transferManager->find(Stub::class, 1);
+// thanks to the proxy pattern and the mapping the relation can be retrieved lazily and automaticly
+$relation = $stub->getRelation();
+
+// changes to a proxyed transfer will be tracked
+$relation->setName('lorem ipsum');
+
+$stub2 = $transferManager->find(Stub::class, 2);
+$stub2->setRelation(new Relation());
+
+$stub3 = new Stub();
+$stub3->setRelation(new Relation());
+
+// any new created transfer must be persisted into the unity of work, so it can be posted by the persister
+$transferManager->persist($stub3);
+
+// flushes all changes, all posts, puts, etc. will happen here
+$transferManager->flush();
+```
+
+## 5. Doctrine Interop
+
+This lib uses the doctrine commom interfaces, so you can do code wich is interoperable with doctrine. The annotation mapping however is completely different, hence the use of the yaml mapping is encouraged (also using yml or xml mapping for doctrine projects is also encouraged, in order to create a domain decoupled from the framework)
+
+## Limitations
+
+* The unity of work implementation of this lib uses the ids of the entities to determine the state of the entity, so using setters for the id fields may result in the entity being considered as untouched even if its a new entity wich should be posted. To avoid problems, prefer to let the lib manage the id fields automaticaly.
+* Theres no many to many relationships handling, therefore if needed the associative table of the many to many association has to be mapped on the api and managed manualy, setting the transfers on it, do not set the ids manualy, manage only the objects around

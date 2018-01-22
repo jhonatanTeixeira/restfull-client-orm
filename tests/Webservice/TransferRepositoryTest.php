@@ -4,7 +4,6 @@ namespace Vox\Webservice;
 
 use Doctrine\Common\Annotations\AnnotationReader;
 use GuzzleHttp\Client;
-use GuzzleHttp\Psr7\Request;
 use GuzzleHttp\Psr7\Response;
 use Metadata\MetadataFactory;
 use PHPUnit\Framework\MockObject\MockObject;
