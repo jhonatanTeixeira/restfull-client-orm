@@ -17,6 +17,8 @@ class PropertyMetadata extends BaseMetadata
     
     public $type;
     
+    public $typeInfo;
+    
     /**
      * @param ReflectionClass $class
      * @param string $name
@@ -25,7 +27,8 @@ class PropertyMetadata extends BaseMetadata
     {
         parent::__construct($class, $name);
         
-        $this->type = $this->parseType();
+        $this->type     = $this->parseType();
+        $this->typeInfo = $this->parseTypeDecoration($this->type);
     }
     
     public function getValue($obj)
@@ -106,19 +109,59 @@ class PropertyMetadata extends BaseMetadata
         }
     }
     
+    public function isNativeType(): bool
+    {
+        return in_array($this->type, [
+            'string',
+            'array',
+            'int',
+            'integer',
+            'float',
+            'boolean',
+            'bool',
+            'DateTime',
+            '\DateTime',
+            '\DateTimeImmutable',
+            'DateTimeImmutable',
+        ]);
+    }
+    
+    public function isDecoratedType(): bool
+    {
+        return (bool) preg_match('/(.*)((\<(.*)\>)|(\[\]))/', $this->type);
+    }
+    
+    public function isDateType(): bool
+    {
+        $type = $this->isDecoratedType() ? $this->typeInfo['class'] ?? $this->type : $this->type;
+        
+        return in_array($type, ['DateTime', '\DateTime', 'DateTimeImmutable', '\DateTimeImmutable']);
+    }
+    
+    private function parseTypeDecoration(string $type = null)
+    {
+        if (preg_match('/(?P<class>.*)((\<(?P<decoration>.*)\>)|(?P<brackets>\[\]))/', $type, $matches)) {
+            return [
+                'class'      => isset($matches['brackets']) ? 'array' : $matches['class'],
+                'decoration' => isset($matches['brackets']) ? $matches['class'] : $matches['decoration']
+            ];
+        }
+    }
+    
     public function serialize()
     {
-        return serialize(array(
+        return serialize([
             $this->class,
             $this->name,
             $this->annotations,
             $this->type,
-        ));
+            $this->typeInfo,
+        ]);
     }
 
     public function unserialize($str)
     {
-        list($this->class, $this->name, $this->annotations, $this->type) = unserialize($str);
+        list($this->class, $this->name, $this->annotations, $this->type, $this->typeInfo) = unserialize($str);
 
         $this->reflection = new \ReflectionProperty($this->class, $this->name);
         $this->reflection->setAccessible(true);

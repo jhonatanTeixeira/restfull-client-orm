@@ -73,6 +73,10 @@ class Normalizer implements NormalizerInterface, NormalizerAwareInterface
                 && $propertyMetadata->getAnnotation(Exclude::class)->output) {
                 continue;
             }
+            
+            if (!empty($value) && $propertyMetadata->isDateType() && $propertyMetadata->isDecoratedType()) {
+                $value = $this->convertDateTimeValue($value, $propertyMetadata);
+            }
 
             if ((is_array($value) || $value instanceof \Traversable)
                 && (preg_match('/\[\]$/', $propertyMetadata->type) || $propertyMetadata->type == 'array')) {
@@ -104,6 +108,11 @@ class Normalizer implements NormalizerInterface, NormalizerAwareInterface
         $this->storage[$object] = $data;
 
         return $data;
+    }
+    
+    private function convertDateTimeValue(\DateTime $date, PropertyMetadata $propertyMetadata): string
+    {
+        return $date->format($propertyMetadata->typeInfo['decoration'] ?? 'Y-m-d H:i:s');
     }
     
     private function normalizeIfSupported($value, string $format = null, array $context = [])

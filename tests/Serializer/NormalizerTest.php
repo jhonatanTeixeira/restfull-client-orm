@@ -97,6 +97,18 @@ class NormalizerTest extends TestCase
 
         $this->assertEquals($normalized, $compare);
     }
+    
+    public function testShouldNormalizeDecoratedDateTime()
+    {
+        $normalizer = new Normalizer(new MetadataFactory(new AnnotationDriver(new AnnotationReader())));
+        
+        $some = new SomeWithDateTime();
+        $some->setDate(new \DateTime());
+        
+        $normalized = $normalizer->normalize($some);
+        
+        $this->assertEquals(date('Y-m-d'), $normalized['date']);
+    }
 }
 
 class Some
@@ -149,4 +161,23 @@ class Other
 class SomeExtension extends Some
 {
     private $otherName = 'other-name';
+}
+
+class SomeWithDateTime
+{
+    /**
+     * @var \DateTime<Y-m-d>
+     */
+    private $date;
+    
+    public function getDate()
+    {
+        return $this->date;
+    }
+
+    public function setDate(\DateTime $date)
+    {
+        $this->date = $date;
+        return $this;
+    }
 }
