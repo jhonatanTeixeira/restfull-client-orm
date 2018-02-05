@@ -2,7 +2,7 @@
 
 namespace Vox\Webservice\Exception;
 
-use PHPUnit\Runner\Exception;
+use Exception;
 use Psr\Http\Message\RequestInterface;
 use Psr\Http\Message\ResponseInterface;
 
