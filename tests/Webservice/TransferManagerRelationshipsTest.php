@@ -514,6 +514,55 @@ class TransferManagerRelationshipsTest extends TestCase
 
         $transferManager->flush();
     }
+    
+    public function testFindWithIri()
+    {
+        $proxyFactory = new ProxyFactory();
+
+        $metadataFactory = new MetadataFactory(
+            new AnnotationDriver(
+                new AnnotationReader(),
+                TransferMetadata::class
+            )
+        );
+
+        $clientRegistry = new ClientRegistry();
+
+        $guzzleClient = $this->createMock(Client::class);
+
+        $guzzleClient->expects($this->exactly(2))
+            ->method('request')
+            ->withConsecutive(
+                ['GET', '/iri/1', ['headers' => ['Content-Type' => 'application/json']]],
+                ['GET', '/iri/2', ['headers' => ['Content-Type' => 'application/json']]]
+            )->willReturnOnConsecutiveCalls(
+                new Response(200, [], json_encode([
+                    'id' => 1,
+                    'belongs' => '/iri/2',
+                ])),
+                new Response(200, [], json_encode([
+                    'id' => 2
+                ]))
+            )
+        ;
+
+        $clientRegistry->set('foo', $guzzleClient);
+
+        $serializer = new Serializer([
+            new ObjectNormalizer(
+                new Normalizer($metadataFactory),
+                new Denormalizer(new ObjectHydrator($metadataFactory))
+            ),
+            [new JsonEncoder()]
+        ]);
+
+        $webserviceClient = new WebserviceClient($clientRegistry, $metadataFactory, $serializer, $serializer);
+
+        $transferManager = new TransferManager($metadataFactory, $webserviceClient, $proxyFactory);
+        
+        $transfer = $transferManager->find(IriRelationship::class, 1);
+        $transfer->getBelongsTo();
+    }
 }
 
 /**
@@ -815,5 +864,65 @@ class RelationshipsStubYml
     public function getBelongsMulti(): RelationshipsStubYml
     {
         return $this->belongsMulti;
+    }
+}
+
+/**
+ * @Resource(client="foo", route="/iri")
+ */
+class IriRelationship
+{
+    /**
+     * @Id()
+     * 
+     * @var int
+     */
+    private $id;
+    
+    /**
+     * @var string
+     */
+    private $belongs;
+    
+    /**
+     * @BelongsTo(foreignField = "belongs")
+     * 
+     * @var IriRelationship
+     */
+    private $belongsTo;
+    
+    public function getId()
+    {
+        return $this->id;
+    }
+
+    public function getBelongs()
+    {
+        return $this->blongs;
+    }
+
+    public function getBelongsTo(): IriRelationship
+    {
+        return $this->belongsTo;
+    }
+
+    public function setId($id)
+    {
+        $this->id = $id;
+        return $this;
+    }
+
+    public function setBelongs($blongs)
+    {
+        $this->blongs = $blongs;
+        
+        return $this;
+    }
+
+    public function setBelongsTo(IriRelationship $belongsTo)
+    {
+        $this->belongsTo = $belongsTo;
+        
+        return $this;
     }
 }

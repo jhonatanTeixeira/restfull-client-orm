@@ -83,7 +83,6 @@ class ProxyFactory implements ProxyFactoryInterface
         $belongsTo = $propertyMetadata->getAnnotation(BelongsTo::class);
         
         if ($belongsTo instanceof BelongsTo && empty($propertyMetadata->getValue($object))) {
-
             if (is_array($belongsTo->foreignField)) {
                 $this->fetchBelongsToMulti($object, $type, $metadata, $propertyMetadata, $belongsTo, $transferManager);
             } else {
@@ -104,6 +103,11 @@ class ProxyFactory implements ProxyFactoryInterface
 
         if (!$idValue) {
             return;
+        }
+        
+        if (!is_integer($idValue)) {
+            preg_match('/\w+$/', $idValue, $matches);
+            $idValue = $matches[0];
         }
 
         $data = $transferManager
