@@ -16,4 +16,9 @@ class HasMany
      * @var string
      */
     public $foreignField;
+    
+    /**
+     * @var string
+     */
+    public $iriCollectionField;
 }

@@ -2,6 +2,7 @@
 
 namespace Vox\Webservice\Proxy;
 
+use Doctrine\Common\Collections\ArrayCollection;
 use ProxyManager\Configuration;
 use ProxyManager\Factory\AccessInterceptorValueHolderFactory;
 use ProxyManager\Proxy\AccessInterceptorValueHolderInterface;
@@ -165,6 +166,14 @@ class ProxyFactory implements ProxyFactoryInterface
     ) {
         $hasMany = $propertyMetadata->getAnnotation(HasMany::class);
         $id      = $metadata->id->getValue($object);
+        
+        if ($hasMany instanceof HasMany && !empty($hasMany->iriCollectionField)) {
+            $data = $this->fetchHasManyIriCollection($metadata, $transferManager, $hasMany, $object, $type);
+            
+            $propertyMetadata->setValue($object, $data);
+            
+            return;
+        }
 
         if ($hasMany instanceof HasMany && !empty($id)) {
             $data = $transferManager->getRepository($type)
@@ -172,6 +181,31 @@ class ProxyFactory implements ProxyFactoryInterface
 
             $propertyMetadata->setValue($object, $data);
         }
+    }
+    
+    private function fetchHasManyIriCollection(
+        TransferMetadata $metadata,
+        TransferManagerInterface $transferManager,
+        HasMany $hasMany,
+        $object,
+        string $type
+    ) {
+        /* @var $iriCollectionFieldMetadata PropertyMetadata */
+        $iriCollectionFieldMetadata = $metadata->propertyMetadata[$hasMany->iriCollectionField];
+        
+        $iris = $iriCollectionFieldMetadata->getValue($object) ?: [];
+        
+        $collection = new ArrayCollection();
+        
+        foreach ($iris as $item) {
+            preg_match('/\w+$/', $item, $matches);
+            $idValue = $matches[0];
+            
+            $item = $transferManager->getRepository($type)->find($idValue);
+            $collection->add($item);
+        }
+        
+        return $collection;
     }
 
     public function registerProxyAutoloader()

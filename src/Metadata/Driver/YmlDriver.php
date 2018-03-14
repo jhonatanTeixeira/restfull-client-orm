@@ -100,7 +100,8 @@ class YmlDriver implements DriverInterface
                 
                 if (isset($config['hasMany'])) {
                     $hasMany = new HasMany();
-                    $hasMany->foreignField = $config['hasMany']['foreignField'];
+                    $hasMany->foreignField       = $config['hasMany']['foreignField'] ?? null;
+                    $hasMany->iriCollectionField = $config['hasMany']['iriCollectionField'] ?? null;
                     $annotations[HasMany::class] = $hasMany;
                 }
                 

@@ -1,0 +1,9 @@
+resource: 
+    client: foo
+    route: /foo
+id: id
+
+parameters:
+    relatedTransfers:
+        hasMany:
+            iriCollectionField: related
