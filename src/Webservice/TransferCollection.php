@@ -204,11 +204,15 @@ class TransferCollection implements Collection
 
     public function filter(Closure $p)
     {
+        $filtered = new ArrayCollection();
+        
         foreach ($this->getIterator() as $item) {
             if ($p($item)) {
-                yield $item;
+                $filtered->add($item);
             }
         }
+        
+        return $filtered;
     }
 
     public function forAll(Closure $p)
@@ -224,9 +228,13 @@ class TransferCollection implements Collection
 
     public function map(Closure $func)
     {
+        $data = new ArrayCollection();
+        
         foreach ($this->getIterator() as $item) {
-            yield $func($item);
+            $data->add($func($item));
         }
+        
+        return $data;
     }
 
     public function partition(Closure $p)
@@ -251,7 +259,7 @@ class TransferCollection implements Collection
 
     public function slice($offset, $length = null)
     {
-        return array_slice(iterator_to_array($this->getIterator()), $offset, $length, true);
+        return new ArrayCollection(array_slice(iterator_to_array($this->getIterator()), $offset, $length, true));
     }
 
     public function getIterator()

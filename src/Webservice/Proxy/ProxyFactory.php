@@ -66,7 +66,7 @@ class ProxyFactory implements ProxyFactoryInterface
             $propertyMetadata = $metadata->propertyMetadata[$name];
             $type             = $propertyMetadata->getParsedType();
 
-            if (class_exists($type)) {
+            if (class_exists($type) && empty($propertyMetadata->getValue($object))) {
                 $this->fetchBelongsTo($metadata, $propertyMetadata, $transferManager, $object, $type);
                 $this->fetchHasOne($metadata, $propertyMetadata, $transferManager, $object, $type);
                 $this->fetchHasMany($metadata, $propertyMetadata, $transferManager, $object, $type);
@@ -83,7 +83,7 @@ class ProxyFactory implements ProxyFactoryInterface
     ) {
         $belongsTo = $propertyMetadata->getAnnotation(BelongsTo::class);
         
-        if ($belongsTo instanceof BelongsTo && empty($propertyMetadata->getValue($object))) {
+        if ($belongsTo instanceof BelongsTo) {
             if (is_array($belongsTo->foreignField)) {
                 $this->fetchBelongsToMulti($object, $type, $metadata, $propertyMetadata, $belongsTo, $transferManager);
             } else {
