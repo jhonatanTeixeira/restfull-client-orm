@@ -5,6 +5,7 @@ namespace Vox\Serializer;
 use Doctrine\Common\Annotations\AnnotationReader;
 use Metadata\MetadataFactory;
 use PHPUnit\Framework\TestCase;
+use Symfony\Component\Serializer\Encoder\JsonEncoder;
 use Symfony\Component\Serializer\NameConverter\CamelCaseToSnakeCaseNameConverter;
 use Symfony\Component\Serializer\Normalizer\DateTimeNormalizer;
 use Symfony\Component\Serializer\Serializer;
@@ -35,10 +36,15 @@ class ObjectNormalizerTest extends TestCase
             new CamelCaseToSnakeCaseNameConverter()
         );
 
-        $this->serializer = new Serializer([
-            $this->objectNormalizer,
-            new DateTimeNormalizer('Y-m-d H:i:s')
-        ]);
+        $this->serializer = new Serializer(
+            [
+                $this->objectNormalizer,
+                new DateTimeNormalizer('Y-m-d H:i:s')
+            ],
+            [
+                new JsonEncoder()
+            ]
+        );
     }
     
     public function testShouldNormalizeComplexType()
@@ -78,6 +84,32 @@ class ObjectNormalizerTest extends TestCase
         $this->assertEquals('abcd', $someOne->getName());
         $this->assertEquals('abcdfgh', $someOne->getOther()->getName());
         $this->assertEquals('abcdfgh', $someOne->getOtherTwo()->getName());
+    }
+    
+    public function testShouldSerializeTypes()
+    {
+        $subOne = new SubOne();
+        $subOne->setName('abc');
+        $subOne->setSubName('def');
+        
+        $serialized = $this->serializer->serialize($subOne, 'json');
+        $data = json_decode($serialized, true);
+        
+        $this->assertEquals(SubOne::class, $data['type']);
+        $this->assertEquals('abc', $data['name']);
+        $this->assertEquals('def', $data['sub_name']);
+    }
+    
+    public function testShouldNotSerializeTypes()
+    {
+        $subOne = new SubOne();
+        $subOne->setName('abc');
+        $subOne->setSubName('def');
+        
+        $serialized = $this->serializer->serialize($subOne, 'json', ['exposeTypes' => false]);
+        $data = json_decode($serialized, true);
+        
+        $this->assertArrayNotHasKey('type', $data);
     }
 }
 
@@ -126,6 +158,11 @@ class SomeOne
     {
         return $this->lastName;
     }
+    
+    public function setName(string $name)
+    {
+        $this->name = $name;
+    }
 }
 
 class OtherTwo
@@ -135,5 +172,19 @@ class OtherTwo
     public function getName()
     {
         return $this->name;
+    }
+}
+class SubOne extends SomeOne
+{
+    private $subName;
+    
+    public function getSubName()
+    {
+        return $this->subName;
+    }
+    
+    public function setSubName(string $subName)
+    {
+        $this->subName = $subName;
     }
 }

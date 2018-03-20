@@ -60,7 +60,7 @@ class Normalizer implements NormalizerInterface, NormalizerAwareInterface
 
         $data = [];
 
-        if ($objectMetadata->reflection->getParentClass()) {
+        if ($objectMetadata->reflection->getParentClass() && ($context['exposeTypes'] ?? true)) {
             $data['type'] = get_class($object);
         }
 
