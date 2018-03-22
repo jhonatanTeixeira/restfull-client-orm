@@ -108,8 +108,13 @@ class UnityOfWork implements UnityOfWorkInterface
 
         $externalId = $this->getIdValue($related);
         $internalId = $metadata->propertyMetadata[$belongsTo->foreignField]->getValue($object);
+        
+        if (!is_integer($internalId)) {
+            preg_match('/\w+$/', $internalId, $matches);
+            $internalId = $matches[0] ?? null;
+        }
 
-        return $externalId !== $internalId;
+        return $externalId != $internalId;
     }
 
     private function hasMultiFieldsRelationshipChanged(
