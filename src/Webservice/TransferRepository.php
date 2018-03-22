@@ -4,7 +4,6 @@ namespace Vox\Webservice;
 
 use Doctrine\Common\Collections\ArrayCollection;
 use Doctrine\Common\Collections\Collection;
-use Doctrine\Common\Persistence\ObjectRepository;
 use Vox\Webservice\Exception\WebserviceResponseException;
 use Vox\Webservice\Proxy\ProxyFactoryInterface;
 
@@ -40,9 +39,9 @@ final class TransferRepository implements TransferRepositoryInterface
     
     /**
      * @param string $transferName
-     * @param \Vox\Webservice\WebserviceClientInterface $webserviceClient
-     * @param \Vox\Webservice\ObjectStorageInterface $objectStorage
-     * @param \Vox\Webservice\TransferManagerInterface $transferManager
+     * @param WebserviceClientInterface $webserviceClient
+     * @param ObjectStorageInterface $objectStorage
+     * @param TransferManagerInterface $transferManager
      * @param ProxyFactoryInterface $proxyFactory
      */
     public function __construct(
@@ -152,6 +151,10 @@ final class TransferRepository implements TransferRepositoryInterface
 
         if ($transfer && !$this->objectStorage->contains($transfer)) {
             $this->objectStorage->attach($transfer);
+        }
+        
+        if ($transfer) {
+            $transfer = $this->proxyFactory->createProxy($transfer, $this->transferManager);
         }
 
         return $transfer;
