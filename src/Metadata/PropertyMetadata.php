@@ -53,7 +53,7 @@ class PropertyMetadata extends BaseMetadata
     {
         $docComment = $this->reflection->getDocComment();
         
-        preg_match('/@var\s+(([^\[\]\s]+)(\[\])?)/', $docComment, $matches);
+        preg_match('/@var\s+(([^\[\]' . PHP_EOL . ']+)(\[\])?)/', $docComment, $matches);
         
         $fullType = $matches[1] ?? null;
         $type     = $matches[2] ?? null;
