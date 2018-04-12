@@ -11,6 +11,7 @@ use Metadata\MetadataFactory;
 use PHPUnit\Framework\TestCase;
 use Symfony\Component\Serializer\Encoder\JsonEncoder;
 use Symfony\Component\Serializer\Serializer;
+use Vox\Data\Mapping\Exclude;
 use Vox\Data\ObjectHydrator;
 use Vox\Metadata\Driver\AnnotationDriver;
 use Vox\Metadata\Driver\YmlDriver;
@@ -563,6 +564,88 @@ class TransferManagerRelationshipsTest extends TestCase
         $transfer = $transferManager->find(IriRelationship::class, 1);
         $transfer->getBelongsTo();
     }
+    
+    public function testSaveWithIri()
+    {
+        $proxyFactory = new ProxyFactory();
+
+        $metadataFactory = new MetadataFactory(
+            new AnnotationDriver(
+                new AnnotationReader(),
+                TransferMetadata::class
+            )
+        );
+
+        $clientRegistry = new ClientRegistry();
+
+        $guzzleClient = $this->createMock(Client::class);
+
+        $guzzleClient->expects($this->exactly(5))
+            ->method('request')
+            ->withConsecutive(
+                ['GET', '/iri/1', ['headers' => ['Content-Type' => 'application/json']]],
+                ['GET', '/iri/3', ['headers' => ['Content-Type' => 'application/json']]],
+                ['GET', '/iri/4', ['headers' => ['Content-Type' => 'application/json']]],
+                ['POST', '/iri', ['json' => [
+                    'id' => null,
+                    'belongs' => '/iri/1',
+                    'has_many' => null,
+                ]]],
+                ['PUT', '/iri/1', ['json' => [
+                    'id' => 1,
+                    'belongs' => null,
+                    'has_many' => [
+                        '/iri/3',
+                        '/iri/4',
+                        '/iri/5',
+                    ],
+                ]]]
+            )->willReturnOnConsecutiveCalls(
+                new Response(200, [], json_encode([
+                    'id' => 1,
+                    'has_many' => [
+                        '/iri/3',
+                        '/iri/4',
+                    ]
+                ])),
+                new Response(200, [], json_encode([
+                    'id' => 3,
+                    'belongs' => '/iri/1',
+                ])),
+                new Response(200, [], json_encode([
+                    'id' => 4,
+                    'belongs' => '/iri/1',
+                ])),
+                new Response(201, [], json_encode([
+                    'id' => 5,
+                    'belongs' => '/iri/1'
+                ])),
+                new Response(200, [], json_encode([
+                    'id' => 1,
+                ]))
+            )
+        ;
+        
+        $clientRegistry->set('foo', $guzzleClient);
+
+        $serializer = new Serializer([
+            new ObjectNormalizer(
+                new Normalizer($metadataFactory),
+                new Denormalizer(new ObjectHydrator($metadataFactory))
+            ),
+            [new JsonEncoder()]
+        ]);
+
+        $webserviceClient = new WebserviceClient($clientRegistry, $metadataFactory, $serializer, $serializer);
+
+        $transferManager = new TransferManager($metadataFactory, $webserviceClient, $proxyFactory);
+        
+        $transfer = $transferManager->find(IriRelationship::class, 1);
+        
+        $transfer->getHasManyTransfers()->add((new IriRelationship())->setBelongsTo($transfer));
+        
+        $transferManager->flush();
+    }
 }
 
 /**
@@ -886,10 +969,24 @@ class IriRelationship
     
     /**
      * @BelongsTo(foreignField = "belongs")
+     * @Exclude()
      * 
      * @var IriRelationship
      */
     private $belongsTo;
+
+    /**
+     * @var array
+     */
+    private $hasMany;
+    
+    /**
+     * @HasMany(iriCollectionField="hasMany", foreignField="belongs")
+     * @Exclude()
+     * 
+     * @var IriRelationship[]
+     */
+    private $hasManyTransfers;
     
     public function getId()
     {
@@ -898,7 +995,7 @@ class IriRelationship
 
     public function getBelongs()
     {
-        return $this->blongs;
+        return $this->belongs;
     }
 
     public function getBelongsTo(): IriRelationship
@@ -906,15 +1003,9 @@ class IriRelationship
         return $this->belongsTo;
     }
 
-    public function setId($id)
+    public function setBelongs(string $belongs)
     {
-        $this->id = $id;
-        return $this;
-    }
-
-    public function setBelongs($blongs)
-    {
-        $this->blongs = $blongs;
+        $this->belongs = $belongs;
         
         return $this;
     }
@@ -922,6 +1013,30 @@ class IriRelationship
     public function setBelongsTo(IriRelationship $belongsTo)
     {
         $this->belongsTo = $belongsTo;
+        
+        return $this;
+    }
+    
+    public function getHasMany()
+    {
+        return $this->hasMany;
+    }
+
+    public function getHasManyTransfers(): Collection
+    {
+        return $this->hasManyTransfers;
+    }
+
+    public function setHasMany(array $hasMany)
+    {
+        $this->hasMany = $hasMany;
+        
+        return $this;
+    }
+
+    public function setHasManyTransfers(Collection $hasManyTransfers)
+    {
+        $this->hasManyTransfers = $hasManyTransfers;
         
         return $this;
     }

@@ -107,7 +107,7 @@ class ProxyFactory implements ProxyFactoryInterface
         }
         
         if (!is_integer($idValue)) {
-            preg_match('/\w+$/', $idValue, $matches);
+            preg_match('/[^\/]+$/', $idValue, $matches);
             $idValue = $matches[0];
         }
 
@@ -198,7 +198,7 @@ class ProxyFactory implements ProxyFactoryInterface
         $collection = new ArrayCollection();
         
         foreach ($iris as $item) {
-            preg_match('/\w+$/', $item, $matches);
+            preg_match('/[^\/]+$/', $item, $matches);
             $idValue = $matches[0];
             
             $item = $transferManager->getRepository($type)->find($idValue);

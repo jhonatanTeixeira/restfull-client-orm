@@ -66,7 +66,7 @@ class UnityOfWork implements UnityOfWorkInterface
     {
         $metadata     = $this->getClassMetadata($object);
         $storedObject = $this->managed[$object];
-
+        
         /* @var $propertyMetadata PropertyMetadata */
         foreach ($metadata->propertyMetadata as $name => $propertyMetadata) {
             $storedValue = $propertyMetadata->getValue($storedObject);
@@ -110,7 +110,7 @@ class UnityOfWork implements UnityOfWorkInterface
         $internalId = $metadata->propertyMetadata[$belongsTo->foreignField]->getValue($object);
         
         if (!is_integer($internalId)) {
-            preg_match('/\w+$/', $internalId, $matches);
+            preg_match('/[^\/]+$/', $internalId, $matches);
             $internalId = $matches[0] ?? null;
         }
 
