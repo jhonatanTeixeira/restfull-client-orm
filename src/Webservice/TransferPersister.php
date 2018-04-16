@@ -216,8 +216,10 @@ class TransferPersister implements TransferPersisterInterface
      */
     private function updateHasManyIds($object, Traversable $associations, $annotation)
     {
-        foreach ($associations as $association) {
-            $this->updateHasOneId($object, $association, $annotation);
+        if (!empty($annotation->foreignField)) {
+            foreach ($associations as $association) {
+                $this->updateHasOneId($object, $association, $annotation);
+            }
         }
         
         if (!$annotation->iriCollectionField) {

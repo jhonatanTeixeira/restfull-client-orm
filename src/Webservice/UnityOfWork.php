@@ -147,7 +147,7 @@ class UnityOfWork implements UnityOfWorkInterface
         $id        = $params[1];
 
         foreach ($this->managed as $managed) {
-            if (get_class($managed) == $className && $id == $this->getIdValue($managed)) {
+            if ($managed instanceof $className && $id == $this->getIdValue($managed)) {
                 return $managed;
             }
         }
