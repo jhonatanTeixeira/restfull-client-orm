@@ -206,7 +206,7 @@ class TransferManagerRelationshipsTest extends TestCase
             });
         ;
 
-        $webserviceClient->expects($this->exactly(3))
+        $webserviceClient->expects($this->exactly(2))
             ->method('get')
             ->willReturnCallback(function ($name, $id) {
                 return new $name($id);
