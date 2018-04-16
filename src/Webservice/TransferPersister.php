@@ -229,9 +229,9 @@ class TransferPersister implements TransferPersisterInterface
         $iris = [];
         
         $objectMetadata = $this->getClassMetadata($object);
-        $resource = $objectMetadata->getAnnotation(Resource::class);
         
         foreach ($associations as $association) {
+            $resource = $this->getClassMetadata($association)->getAnnotation(Resource::class);
             $iris[] = sprintf('%s/%s', $resource->route, $this->getIdValue($association));
         }
         
