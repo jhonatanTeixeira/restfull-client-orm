@@ -9,6 +9,7 @@ use Vox\Metadata\PropertyMetadata;
 use Vox\Webservice\Mapping\BelongsTo;
 use Vox\Webservice\Mapping\HasMany;
 use Vox\Webservice\Mapping\HasOne;
+use Vox\Webservice\Mapping\Resource;
 use Vox\Webservice\Metadata\TransferMetadata;
 
 /**
@@ -178,8 +179,14 @@ class TransferPersister implements TransferPersisterInterface
 
         $objectMetadata = $this->getClassMetadata($object);
 
-        $objectMetadata->propertyMetadata[$belongsTo->foreignField]
-            ->setValue($object, $this->getIdValue($association));
+        $foreignPropertyMetadata = $objectMetadata->propertyMetadata[$belongsTo->foreignField];
+        $idValue                 = $this->getIdValue($association);
+        
+        if ($foreignPropertyMetadata->type == 'string') {
+            $idValue = sprintf('%s/%s', $objectMetadata->getAnnotation(Resource::class)->route, $idValue);
+        }
+        
+        $foreignPropertyMetadata->setValue($object, $idValue);
     }
 
     /**
@@ -192,8 +199,14 @@ class TransferPersister implements TransferPersisterInterface
         $id                  = $this->getIdValue($object);
         $associationMetadata = $this->getClassMetadata($association);
 
-        $associationMetadata->propertyMetadata[$annotation->foreignField]
-            ->setValue($association, $id);
+        $foreignPropertyMetadata = $associationMetadata->propertyMetadata[$annotation->foreignField];
+        
+        if ($foreignPropertyMetadata->type == 'string') {
+            $objectMetadata = $this->getClassMetadata($object);
+            $id = sprintf('%s/%s', $objectMetadata->getAnnotation(Resource::class)->route, $id);
+        }
+        
+        $foreignPropertyMetadata->setValue($association, $id);
     }
 
     /**
@@ -203,9 +216,26 @@ class TransferPersister implements TransferPersisterInterface
      */
     private function updateHasManyIds($object, Traversable $associations, $annotation)
     {
-        foreach ($associations as $association) {
-            $this->updateHasOneId($object, $association, $annotation);
+        if (!empty($annotation->foreignField)) {
+            foreach ($associations as $association) {
+                $this->updateHasOneId($object, $association, $annotation);
+            }
         }
+        
+        if (!$annotation->iriCollectionField) {
+            return;
+        }
+        
+        $iris = [];
+        
+        $objectMetadata = $this->getClassMetadata($object);
+        
+        foreach ($associations as $association) {
+            $resource = $this->getClassMetadata($association)->getAnnotation(Resource::class);
+            $iris[] = sprintf('%s/%s', $resource->route, $this->getIdValue($association));
+        }
+        
+        $objectMetadata->propertyMetadata[$annotation->iriCollectionField]->setValue($object, $iris);
     }
 
     private function renewState($object)

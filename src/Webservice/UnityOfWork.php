@@ -66,7 +66,7 @@ class UnityOfWork implements UnityOfWorkInterface
     {
         $metadata     = $this->getClassMetadata($object);
         $storedObject = $this->managed[$object];
-
+        
         /* @var $propertyMetadata PropertyMetadata */
         foreach ($metadata->propertyMetadata as $name => $propertyMetadata) {
             $storedValue = $propertyMetadata->getValue($storedObject);
@@ -108,8 +108,13 @@ class UnityOfWork implements UnityOfWorkInterface
 
         $externalId = $this->getIdValue($related);
         $internalId = $metadata->propertyMetadata[$belongsTo->foreignField]->getValue($object);
+        
+        if (!is_integer($internalId)) {
+            preg_match('/[^\/]+$/', $internalId, $matches);
+            $internalId = $matches[0] ?? null;
+        }
 
-        return $externalId !== $internalId;
+        return $externalId != $internalId;
     }
 
     private function hasMultiFieldsRelationshipChanged(
@@ -142,7 +147,7 @@ class UnityOfWork implements UnityOfWorkInterface
         $id        = $params[1];
 
         foreach ($this->managed as $managed) {
-            if (get_class($managed) == $className && $id == $this->getIdValue($managed)) {
+            if ($managed instanceof $className && $id == $this->getIdValue($managed)) {
                 return $managed;
             }
         }
