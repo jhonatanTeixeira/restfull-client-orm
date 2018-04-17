@@ -6,6 +6,9 @@ use Doctrine\Common\Collections\Collection;
 use Metadata\MetadataFactoryInterface;
 use Traversable;
 use Vox\Metadata\PropertyMetadata;
+use Vox\Webservice\Event\DispatchEventTrait;
+use Vox\Webservice\Event\LifecycleEvent;
+use Vox\Webservice\Event\PersistenceEvents;
 use Vox\Webservice\Mapping\BelongsTo;
 use Vox\Webservice\Mapping\HasMany;
 use Vox\Webservice\Mapping\HasOne;
@@ -20,7 +23,8 @@ use Vox\Webservice\Metadata\TransferMetadata;
  */
 class TransferPersister implements TransferPersisterInterface
 {
-    use MetadataTrait;
+    use MetadataTrait, 
+        DispatchEventTrait;
     
     /**
      * @var MetadataFactoryInterface
@@ -30,21 +34,35 @@ class TransferPersister implements TransferPersisterInterface
     /**
      * @var UnityOfWorkInterface
      */
-    private $unityOfWork;
+    private $unitOfWork;
     
     /**
      * @var WebserviceClientInterface
      */
     private $webserviceClient;
     
+    /**
+     * @var EventDispatcherInterface
+     */
+    private $eventDispatcher;
+    
+    /**
+     * @var TransferManagerInterface
+     */
+    private $transferManager;
+    
     public function __construct(
         MetadataFactoryInterface $metadataFactory,
-        UnityOfWorkInterface $unityOfWork,
-        WebserviceClientInterface $webserviceClient
+        UnitOfWorkInterface $unitOfWork,
+        WebserviceClientInterface $webserviceClient,
+        TransferManagerInterface $transferManager = null,
+        EventDispatcherInterface $eventDispatcher = null
     ) {
         $this->metadataFactory  = $metadataFactory;
-        $this->unityOfWork      = $unityOfWork;
+        $this->unitOfWork       = $unitOfWork;
         $this->webserviceClient = $webserviceClient;
+        $this->transferManager  = $transferManager;
+        $this->eventDispatcher  = $eventDispatcher;
     }
 
     public function save($object, $owner = null)
@@ -76,11 +94,11 @@ class TransferPersister implements TransferPersisterInterface
             return;
         }
 
-        if ($this->unityOfWork->isDetached($association)) {
-            $this->unityOfWork->attach($association);
+        if ($this->unitOfWork->isDetached($association)) {
+            $this->unitOfWork->attach($association);
         }
 
-        if (!$this->unityOfWork->isNew($association) && !$this->unityOfWork->isDirty($association)) {
+        if (!$this->unitOfWork->isNew($association) && !$this->unitOfWork->isDirty($association)) {
             return;
         }
 
@@ -89,25 +107,32 @@ class TransferPersister implements TransferPersisterInterface
 
     private function persistTransfer($object, $owner = null)
     {
-        if ($this->unityOfWork->isNew($object)) {
+        $event = $this->eventDispatcher ? new LifecycleEvent($object, $this->transferManager) : null;
+        
+        if ($this->unitOfWork->isNew($object)) {
             $this->updateRelationshipsIds($object, $owner);
             $this->webserviceClient->post($object);
             $this->renewState($object);
+            $this->dispatchEvent(PersistenceEvents::POST_PERSIST, $event);
             
             return;
         }
 
-        if ($this->unityOfWork->isRemoved($object)) {
+        if ($this->unitOfWork->isRemoved($object)) {
+            $this->dispatchEvent(PersistenceEvents::PRE_REMOVE, $event);
             $this->webserviceClient->delete(get_class($object), $this->getIdValue($object));
-            $this->unityOfWork->detach($object);
+            $this->dispatchEvent(PersistenceEvents::POST_REMOVE, $event);
+            $this->unitOfWork->detach($object);
 
             return;
         }
 
-        if ($this->unityOfWork->isDirty($object)) {
+        if ($this->unitOfWork->isDirty($object)) {
             $this->updateRelationshipsIds($object, $owner);
+            $this->dispatchEvent(PersistenceEvents::PRE_UPDATE, $event);
             $this->webserviceClient->put($object);
             $this->renewState($object);
+            $this->dispatchEvent(PersistenceEvents::POST_UPDATE, $event);
         }
     }
 
@@ -240,7 +265,7 @@ class TransferPersister implements TransferPersisterInterface
 
     private function renewState($object)
     {
-        $this->unityOfWork->detach($object);
-        $this->unityOfWork->attach($object);
+        $this->unitOfWork->detach($object);
+        $this->unitOfWork->attach($object);
     }
 }

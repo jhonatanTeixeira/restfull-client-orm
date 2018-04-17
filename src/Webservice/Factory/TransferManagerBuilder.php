@@ -16,6 +16,7 @@ use Vox\Metadata\Factory\MetadataFactoryFactoryInterface;
 use Vox\Serializer\Factory\SerializerFactory;
 use Vox\Serializer\Factory\SerializerFactoryInterface;
 use Vox\Webservice\ClientRegistryInterface;
+use Vox\Webservice\EventDispatcherInterface;
 use Vox\Webservice\Metadata\TransferMetadata;
 use Vox\Webservice\Proxy\ProxyFactory;
 use Vox\Webservice\Proxy\ProxyFactoryInterface;
@@ -23,6 +24,11 @@ use Vox\Webservice\TransferManager;
 use Vox\Webservice\TransferManagerInterface;
 use Vox\Webservice\WebserviceClientInterface;
 
+/**
+ * Class to help the creation of a TransferManager
+ * 
+ * @author Jhonatan Teixeira <jhonatan.teixeira@gmail.com>
+ */
 class TransferManagerBuilder
 {
     /**
@@ -99,6 +105,11 @@ class TransferManagerBuilder
      * @var WebserviceClientInterface
      */
     private $webserviceClient;
+    
+    /**
+     * @var EventDispatcherInterface
+     */
+    private $eventDispatcher;
 
     public function __construct(
         Cache $doctrineCache = null,
@@ -170,7 +181,12 @@ class TransferManagerBuilder
         $webServiceClient = $this->webserviceClient ?? $this->clientFactory
             ->createWebserviceClient($this->clientRegistry, $metadataFactory, $serializer, $serializer);
 
-        return new TransferManager($metadataFactory, $webServiceClient, $this->getProxyFactory());
+        return new TransferManager(
+            $metadataFactory,
+            $webServiceClient,
+            $this->getProxyFactory(),
+            $this->eventDispatcher
+        );
     }
 
     public function withProxyFactory(ProxyFactoryInterface $proxyFactory)
@@ -246,6 +262,13 @@ class TransferManagerBuilder
     public function withWebserviceClient(WebserviceClientInterface $webserviceClient)
     {
         $this->webserviceClient = $webserviceClient;
+        
+        return $this;
+    }
+    
+    public function withEventDispatcher(EventDispatcherInterface $eventDispatcher)
+    {
+        $this->eventDispatcher = $eventDispatcher;
         
         return $this;
     }

@@ -2,8 +2,11 @@
 
 namespace Vox\Webservice;
 
-use Doctrine\Common\Persistence\ObjectRepository;
 use Metadata\MetadataFactoryInterface;
+use Vox\Webservice\Event\DispatchEventTrait;
+use Vox\Webservice\Event\LifecycleEvent;
+use Vox\Webservice\Event\ManagerEvent;
+use Vox\Webservice\Event\PersistenceEvents;
 use Vox\Webservice\Metadata\TransferMetadata;
 use Vox\Webservice\Proxy\ProxyFactory;
 use Vox\Webservice\Proxy\ProxyFactoryInterface;
@@ -17,6 +20,8 @@ use Vox\Webservice\Proxy\ProxyFactoryInterface;
  */
 class TransferManager implements TransferManagerInterface
 {
+    use DispatchEventTrait;
+    
     /**
      * @var UnityOfWorkInterface
      */
@@ -42,14 +47,21 @@ class TransferManager implements TransferManagerInterface
      */
     private $proxyFactory;
     
+    /**
+     * @var EventDispatcherInterface
+     */
+    private $eventDispatcher;
+    
     public function __construct(
         MetadataFactoryInterface $metadataFactory,
         WebserviceClientInterface $webserviceClient,
-        ProxyFactoryInterface $proxyFactory = null
+        ProxyFactoryInterface $proxyFactory = null,
+        EventDispatcherInterface $eventDispatcher = null
     ) {
         $this->metadataFactory  = $metadataFactory;
         $this->webserviceClient = $webserviceClient;
         $this->proxyFactory     = $proxyFactory ?? new ProxyFactory();
+        $this->eventDispatcher  = $eventDispatcher;
         
         $this->clear();
     }
@@ -61,11 +73,13 @@ class TransferManager implements TransferManagerInterface
      */
     public function clear($objectName = null)
     {
-        $this->unityOfWork       = new UnityOfWork($this->metadataFactory);
+        $this->unityOfWork       = new UnitOfWork($this->metadataFactory);
         $this->transferPersister = new TransferPersister(
             $this->metadataFactory,
             $this->unityOfWork,
-            $this->webserviceClient
+            $this->webserviceClient,
+            $this,
+            $this->eventDispatcher
         );
     }
 
@@ -86,9 +100,15 @@ class TransferManager implements TransferManagerInterface
 
     public function flush()
     {
+        $event = new ManagerEvent($this);
+        
+        $this->dispatchEvent(PersistenceEvents::PRE_FLUSH, $event);
+        
         foreach ($this->unityOfWork as $transfer) {
             $this->transferPersister->save($transfer);
         }
+        
+        $this->dispatchEvent(PersistenceEvents::POST_FLUSH, $event);
     }
 
     public function getClassMetadata($className): TransferMetadata
@@ -128,6 +148,7 @@ class TransferManager implements TransferManagerInterface
 
     public function persist($object)
     {
+        $this->dispatchEvent(PersistenceEvents::PRE_PERSIST, new LifecycleEvent($object, $this));
         $this->unityOfWork->attach($object);
     }
 

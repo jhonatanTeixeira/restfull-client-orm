@@ -17,7 +17,7 @@ use Vox\Webservice\Metadata\TransferMetadata;
  * 
  * @author Jhonatan Teixeira <jhonatan.teixeira@gmail.com>
  */
-class UnityOfWork implements UnityOfWorkInterface
+class UnitOfWork implements UnitOfWorkInterface
 {
     use MetadataTrait;
     

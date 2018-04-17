@@ -69,7 +69,7 @@ class IdMetadata
     public function getType(): string
     {
         if (!$this->hasIds()) {
-            return;
+            return '';
         }
 
         if ($this->isMultiId()) {
