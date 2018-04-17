@@ -51,10 +51,10 @@ class PersistenceEventsTest extends TestCase
         
         $tranfserManager = $managerBuilder->createTransferManager();
         
-        $one = $tranfserManager->find(SimpleStub::class, 1);
-        $two = $tranfserManager->find(SimpleStub::class, 2);
+        $one  = $tranfserManager->find(SimpleStub::class, 1);
+        $two  = $tranfserManager->find(SimpleStub::class, 2);
+        $tree = new SimpleStub(null);
         $one->setData([3, 5]);
-        $tree = new SimpleStub(3);
         
         $tranfserManager->persist($tree);
         $tranfserManager->remove($two);
