@@ -209,7 +209,8 @@ class TransferPersister implements TransferPersisterInterface
         $idValue                 = $this->getIdValue($association);
         
         if ($foreignPropertyMetadata->type == 'string') {
-            $idValue = sprintf('%s/%s', $objectMetadata->getAnnotation(Resource::class)->route, $idValue);
+            $resource = $this->getClassMetadata($association)->getAnnotation(Resource::class);
+            $idValue = sprintf('%s/%s', $resource->route, $idValue);
         }
         
         $foreignPropertyMetadata->setValue($object, $idValue);
@@ -228,8 +229,8 @@ class TransferPersister implements TransferPersisterInterface
         $foreignPropertyMetadata = $associationMetadata->propertyMetadata[$annotation->foreignField];
         
         if ($foreignPropertyMetadata->type == 'string') {
-            $objectMetadata = $this->getClassMetadata($object);
-            $id = sprintf('%s/%s', $objectMetadata->getAnnotation(Resource::class)->route, $id);
+            $resource = $this->getClassMetadata($association)->getAnnotation(Resource::class);
+            $id = sprintf('%s/%s', $resource->route, $id);
         }
         
         $foreignPropertyMetadata->setValue($association, $id);
