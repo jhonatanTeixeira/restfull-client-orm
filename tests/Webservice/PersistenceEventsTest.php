@@ -32,6 +32,8 @@ class PersistenceEventsTest extends TestCase
         $listenerMock->expects($this->once())
             ->method(PersistenceEvents::PRE_UPDATE);
         $listenerMock->expects($this->once())
+            ->method(PersistenceEvents::PRE_REMOVE);
+        $listenerMock->expects($this->once())
             ->method(PersistenceEvents::POST_FLUSH);
         
         $eventDispatcher
@@ -40,6 +42,7 @@ class PersistenceEventsTest extends TestCase
                     PersistenceEvents::PRE_FLUSH, 
                     PersistenceEvents::PRE_PERSIST, 
                     PersistenceEvents::PRE_UPDATE, 
+                    PersistenceEvents::PRE_REMOVE, 
                     PersistenceEvents::POST_FLUSH, 
                 ], 
                 $listenerMock
@@ -68,6 +71,7 @@ interface ListenerStub
     public function prePersist();
     public function postPersist();
     public function preUpdate();
+    public function preRemove();
     public function postUpdate();
     public function preFlush();
     public function postFlush();
