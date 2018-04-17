@@ -148,7 +148,6 @@ class TransferManager implements TransferManagerInterface
 
     public function persist($object)
     {
-        $this->dispatchEvent(PersistenceEvents::PRE_PERSIST, new LifecycleEvent($object, $this));
         $this->unityOfWork->attach($object);
     }
 

@@ -111,6 +111,7 @@ class TransferPersister implements TransferPersisterInterface
         
         if ($this->unitOfWork->isNew($object)) {
             $this->updateRelationshipsIds($object, $owner);
+            $this->dispatchEvent(PersistenceEvents::PRE_PERSIST, $event);
             $this->webserviceClient->post($object);
             $this->renewState($object);
             $this->dispatchEvent(PersistenceEvents::POST_PERSIST, $event);
@@ -121,8 +122,8 @@ class TransferPersister implements TransferPersisterInterface
         if ($this->unitOfWork->isRemoved($object)) {
             $this->dispatchEvent(PersistenceEvents::PRE_REMOVE, $event);
             $this->webserviceClient->delete(get_class($object), $this->getIdValue($object));
-            $this->dispatchEvent(PersistenceEvents::POST_REMOVE, $event);
             $this->unitOfWork->detach($object);
+            $this->dispatchEvent(PersistenceEvents::POST_REMOVE, $event);
 
             return;
         }
