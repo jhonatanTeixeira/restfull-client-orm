@@ -10,8 +10,8 @@
         "php": ">=7.0",
         "jms/metadata": "^1",
         "doctrine/annotations": "^1",
-        "ocramius/proxy-manager": "^2",
-        "doctrine/common": "^2",
+        "ocramius/proxy-manager": "^2.0|^2",
+        "doctrine/common": "^2.7|^2",
         "symfony/serializer": "^3",
         "guzzlehttp/guzzle": "^6",
         "symfony/yaml": "^3"
