@@ -109,31 +109,36 @@ class TransferPersister implements TransferPersisterInterface
     {
         $event = $this->eventDispatcher ? new LifecycleEvent($object, $this->transferManager) : null;
         
-        if ($this->unitOfWork->isNew($object)) {
-            $this->updateRelationshipsIds($object, $owner);
-            $this->dispatchEvent(PersistenceEvents::PRE_PERSIST, $event);
-            $this->webserviceClient->post($object);
-            $this->renewState($object);
-            $this->dispatchEvent(PersistenceEvents::POST_PERSIST, $event);
+        try {
+            if ($this->unitOfWork->isNew($object)) {
+                $this->updateRelationshipsIds($object, $owner);
+                $this->webserviceClient->post($object);
+                $this->renewState($object);
+                $this->dispatchEvent(PersistenceEvents::POST_PERSIST, $event);
+
+                return;
+            }
+
+            if ($this->unitOfWork->isRemoved($object)) {
+                $this->dispatchEvent(PersistenceEvents::PRE_REMOVE, $event);
+                $this->webserviceClient->delete(get_class($object), $this->getIdValue($object));
+                $this->dispatchEvent(PersistenceEvents::POST_REMOVE, $event);
+                $this->unitOfWork->detach($object);
+
+                return;
+            }
+
+            if ($this->unitOfWork->isDirty($object)) {
+                $this->updateRelationshipsIds($object, $owner);
+                $this->dispatchEvent(PersistenceEvents::PRE_UPDATE, $event);
+                $this->webserviceClient->put($object);
+                $this->renewState($object);
+                $this->dispatchEvent(PersistenceEvents::POST_UPDATE, $event);
+            }
+        } catch (\Throwable $ex) {
+            $this->dispatchEvent(PersistenceEvents::ON_EXCEPTION, $event);
             
-            return;
-        }
-
-        if ($this->unitOfWork->isRemoved($object)) {
-            $this->dispatchEvent(PersistenceEvents::PRE_REMOVE, $event);
-            $this->webserviceClient->delete(get_class($object), $this->getIdValue($object));
-            $this->unitOfWork->detach($object);
-            $this->dispatchEvent(PersistenceEvents::POST_REMOVE, $event);
-
-            return;
-        }
-
-        if ($this->unitOfWork->isDirty($object)) {
-            $this->updateRelationshipsIds($object, $owner);
-            $this->dispatchEvent(PersistenceEvents::PRE_UPDATE, $event);
-            $this->webserviceClient->put($object);
-            $this->renewState($object);
-            $this->dispatchEvent(PersistenceEvents::POST_UPDATE, $event);
+            throw $ex;
         }
     }
 

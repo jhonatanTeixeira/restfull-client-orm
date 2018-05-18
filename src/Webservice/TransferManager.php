@@ -25,7 +25,7 @@ class TransferManager implements TransferManagerInterface
     /**
      * @var UnityOfWorkInterface
      */
-    private $unityOfWork;
+    private $unitOfWork;
     
     /**
      * @var MetadataFactoryInterface
@@ -73,10 +73,10 @@ class TransferManager implements TransferManagerInterface
      */
     public function clear($objectName = null)
     {
-        $this->unityOfWork       = new UnitOfWork($this->metadataFactory);
+        $this->unitOfWork       = new UnitOfWork($this->metadataFactory);
         $this->transferPersister = new TransferPersister(
             $this->metadataFactory,
-            $this->unityOfWork,
+            $this->unitOfWork,
             $this->webserviceClient,
             $this,
             $this->eventDispatcher
@@ -85,12 +85,12 @@ class TransferManager implements TransferManagerInterface
 
     public function contains($object): bool
     {
-        return $this->unityOfWork->contains($object);
+        return $this->unitOfWork->contains($object);
     }
 
     public function detach($object)
     {
-        $this->unityOfWork->detach($object);
+        $this->unitOfWork->detach($object);
     }
 
     public function find($className, $id)
@@ -104,7 +104,7 @@ class TransferManager implements TransferManagerInterface
         
         $this->dispatchEvent(PersistenceEvents::PRE_FLUSH, $event);
         
-        foreach ($this->unityOfWork as $transfer) {
+        foreach ($this->unitOfWork as $transfer) {
             $this->transferPersister->save($transfer);
         }
         
@@ -130,7 +130,7 @@ class TransferManager implements TransferManagerInterface
         return new TransferRepository(
             $className,
             $this->webserviceClient,
-            $this->unityOfWork,
+            $this->unitOfWork,
             $this,
             $this->proxyFactory
         );
@@ -148,7 +148,8 @@ class TransferManager implements TransferManagerInterface
 
     public function persist($object)
     {
-        $this->unityOfWork->attach($object);
+        $this->dispatchEvent(PersistenceEvents::PRE_PERSIST, new LifecycleEvent($object, $this));
+        $this->unitOfWork->attach($object);
     }
 
     public function refresh($object)
@@ -158,6 +159,11 @@ class TransferManager implements TransferManagerInterface
 
     public function remove($object)
     {
-        $this->unityOfWork->remove($object);
+        $this->unitOfWork->remove($object);
+    }
+    
+    public function getUnitOfWork(): UnitOfWorkInterface
+    {
+        return $this->unitOfWork;
     }
 }

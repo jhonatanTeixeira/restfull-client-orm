@@ -183,4 +183,9 @@ class UnitOfWork implements UnitOfWorkInterface
     {
         return !$this->managed->contains($object);
     }
+    
+    public function getOriginalObject($object)
+    {
+        return $this->managed[$object];
+    }
 }

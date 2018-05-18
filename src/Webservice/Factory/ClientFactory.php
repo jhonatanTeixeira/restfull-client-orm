@@ -30,6 +30,8 @@ class ClientFactory
             $name,
             new Client(['base_uri' => $baseUri, 'defaults' => $defaults, 'handler' => $handlerStack])
         );
+        
+        return $this;
     }
     
     public function createWebserviceClient(

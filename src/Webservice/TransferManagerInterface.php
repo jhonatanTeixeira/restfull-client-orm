@@ -11,4 +11,6 @@ use Vox\Webservice\Metadata\TransferMetadata;
 interface TransferManagerInterface extends ObjectManager
 {
     public function getClassMetadata($className): TransferMetadata;
+    
+    public function getUnitOfWork(): UnitOfWorkInterface;
 }

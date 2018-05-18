@@ -12,7 +12,7 @@ use Vox\Webservice\Metadata\TransferMetadata;
  */
 trait MetadataTrait
 {
-     /**
+    /**
      * @var MetadataFactoryInterface
      */
     private $metadataFactory;

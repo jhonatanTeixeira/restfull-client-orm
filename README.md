@@ -47,7 +47,53 @@ $webserviceClient = Vox\Webservice\WebserviceClient($registry, $metadataFactory,
 // Finaly you can obtain a transfer manager
 $transferManager = new Vox\Webservice\TransferManager($metadataFactory, $webserviceClient)
 ```
-As you can see, its actualy a good idea to use a dependency injection container to build this.
+### 3.1. Using the TransferManagerBuilder
+The builder class enables a more configuration style creation of the transfer manager.
+
+The most basic setup would be the following, to obtain a manager with annotations driver, with no caching system:
+```php
+use Vox\Webservice\ClientRegistry;
+use Vox\Webservice\Factory\ClientFactory;
+use Vox\Webservice\Factory\TransferManagerBuilder;
+
+$clientRegistry = new ClientRegistry();
+$clientFactory = (new ClientFactory())
+    ->addClient('foo', 'http://foo.localhost', $clientRegistry)
+    ->addClient('bar', 'http://bar.localhost', $clientRegistry);
+    
+$builder = new TransferManagerBuilder();
+$builder->withClientRegistry($clientRegistry)
+    ->withClientFactory($clientFactory);
+    
+$transferManager = $builder->createTransferManager();
+```
+
+to add caching system simply change it on the builder
+```php
+$builder->withMetadataCache('file')
+    ->withCacheDir('/tmp/cache');
+    
+// Or if you want doctrine caches
+$builder->withDoctrineCache(new ApcCache());
+
+//Note that the method withCacheDir, also sets the proxy cache folder
+```
+
+to create with yml driver:
+```php
+$builder->withMetadataDriver('yaml')
+    ->withMetadataPath('src/Resources/metadata');
+```
+
+### 3.2 Using transactional mode
+Sometimes, you need things to be rolled back when something goes wrong just like you can using a database. That behavior is possible with RRM too. Using the builder just call the method isTransactional.
+
+```php
+$builder->isTransactional();
+// you can also disable by calling $builder->isTransactional(false);
+```
+
+Now, when something goes wrong, the manager will try to restore all data by doing posts, updates and deletions to the previows values on your webservice
 
 ## 3. Mapping a Transfer
 
@@ -318,7 +364,58 @@ $transferManager->persist($stub3);
 $transferManager->flush();
 ```
 
-## 5. Doctrine Interop
+## 5. Iri relationships support
+
+if your webservice uses iri relationships, you can map it using the following
+
+```php
+/**
+ * @Resource(client="foo", route="/foo")
+ */
+class IriRelated
+{
+    /**
+     * @Id
+     *
+     * @var int
+     */
+    private $id;
+    
+    /**
+     * @var array
+     */
+    private $related;
+    
+    /**
+     * @HasMany(iriCollectionField="related")
+     * 
+     * @var IriRelated[]
+     */
+    private $relatedTransfers;
+}
+```
+
+or with Yaml
+
+```yaml
+resource: 
+    client: foo
+    route: /foo
+id: id
+
+parameters:
+    relatedTransfers:
+        hasMany:
+            iriCollectionField: related
+```
+
+the iriCollectionField is the field that conatiains an array of iri addresses, a collection of objects will be created
+as soon as you call the relatedTransfers, but have in mind, it will call the webservice one by one.
+
+The other situations like belongs to, will be taken care automaticaly, just map as commom relationships, the lib detects
+if its an iri address using a regexp that looks for the format ".+/.+$"
+
+## 6. Doctrine Interop
 
 This lib uses the doctrine commom interfaces, so you can do code wich is interoperable with doctrine. The annotation mapping however is completely different, hence the use of the yaml mapping is encouraged (also using yml or xml mapping for doctrine projects is also encouraged, in order to create a domain decoupled from the framework)
 

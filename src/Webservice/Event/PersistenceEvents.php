@@ -21,6 +21,8 @@ final class PersistenceEvents
     const POST_FLUSH   = 'postFlush';
 
     const ON_LOAD      = 'onLoad';
+    
+    const ON_EXCEPTION = 'onException';
 
     private function __construct()
     {
