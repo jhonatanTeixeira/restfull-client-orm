@@ -419,6 +419,51 @@ if its an iri address using a regexp that looks for the format ".+/.+$"
 
 This lib uses the doctrine commom interfaces, so you can do code wich is interoperable with doctrine. The annotation mapping however is completely different, hence the use of the yaml mapping is encouraged (also using yml or xml mapping for doctrine projects is also encouraged, in order to create a domain decoupled from the framework)
 
+## 7. The event system
+
+The event system is made to be compatible with doctrine's, so you can have easy time importing plain objects from other system and have its events on your consumer
+
+Create a listener class
+```php
+class ExampleListener
+{
+    public function prePersist(LifecycleEventInterface $event) {}
+    public function postPersist(LifecycleEventInterface $event) {}
+    public function preUpdate(LifecycleEventInterface $event) {}
+    public function preRemove(LifecycleEventInterface $event) {}
+    public function postUpdate(LifecycleEventInterface $event) {}
+    public function preFlush(LifecycleEventInterface $event) {}
+    public function postFlush(LifecycleEventInterface $event) {}
+}
+```
+
+Register the listener
+```php
+use Vox\Webservice\Event\PersistenceEvents;
+use Vox\Webservice\Factory\TransferManagerBuilder;
+use Vox\Webservice\EventDispatcher;
+
+//create the event dispatcher
+$eventDispatcher = new EventDispatcher();
+
+//register the listsner
+$eventDispatcher
+    ->addEventListener(
+	[
+	    PersistenceEvents::PRE_FLUSH, 
+	    PersistenceEvents::PRE_PERSIST, 
+	    PersistenceEvents::PRE_UPDATE, 
+	    PersistenceEvents::PRE_REMOVE, 
+	    PersistenceEvents::POST_FLUSH, 
+	], 
+	new ExampleListener()
+    );
+    
+//register the event dispatcher
+$managerBuilder = new TransferManagerBuilder();
+$managerBuilder->withEventDispatcher($eventDispatcher);
+```
+
 ## Limitations
 
 * The unity of work implementation of this lib uses the ids of the entities to determine the state of the entity, so using setters for the id fields may result in the entity being considered as untouched even if its a new entity wich should be posted. To avoid problems, prefer to let the lib manage the id fields automaticaly.
