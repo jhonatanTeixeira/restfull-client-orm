@@ -1,0 +1,16 @@
+resource: 
+    client: some_client
+    route: /test
+id: id
+parameters:
+    id:
+        bindings:
+            source: id
+        
+    nome:
+        bindings:
+            source: name
+            
+    email:
+        bindings:
+            source: e_mail

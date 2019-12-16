@@ -150,6 +150,5 @@ class YmlDriver implements DriverInterface
         }
 
         return [];
-        throw new RuntimeException("metadata file not found for class $className");
     }
 }

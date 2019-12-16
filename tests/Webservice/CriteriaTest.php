@@ -33,7 +33,7 @@ class CriteriaTest extends TestCase
      */
     private $transferManager;
 
-    protected function setUp()
+    protected function setUp(): void
     {
         $proxyFactory = new ProxyFactory();
 

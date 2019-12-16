@@ -50,7 +50,7 @@ class TransferManagerTest extends TestCase
     
     private $registry;
     
-    protected function setUp()
+    protected function setUp(): void
     {
         $this->mockHandler = new MockHandler();
         
@@ -181,7 +181,7 @@ class TransferManagerTest extends TestCase
         
         $this->webserviceClient->expects($this->exactly(2))
             ->method('put')
-            ->withConsecutive($transfer1, $transfer2)
+            ->withConsecutive([$transfer1], [$transfer2])
             ->willReturn(
                 new Response(200, ['Content-Type' => 'application/json'], json_encode(['id' => 1])),
                 new Response(200, ['Content-Type' => 'application/json'], json_encode(['id' => 2]))

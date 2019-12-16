@@ -13,7 +13,7 @@ use Vox\Webservice\WebserviceClientInterface;
 
 class TransferManagerBuilderTest extends TestCase
 {
-    protected function setUp()
+    protected function setUp(): void
     {
         exec('rm -rf /tmp/*.php');
     }

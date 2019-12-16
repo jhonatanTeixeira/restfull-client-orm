@@ -25,7 +25,7 @@ use Vox\Webservice\Exception\WebserviceResponseException;
 use Vox\Webservice\Mapping\Resource;
 use Vox\Webservice\Metadata\TransferMetadata;
 
-class WebserviceClientTest extends TestCase
+class WebserviceClientPHP74Test extends TestCase
 {
     /**
      * @var WebserviceClient
@@ -79,11 +79,11 @@ class WebserviceClientTest extends TestCase
         
         $webserviceClient = $this->webserviceClient;
         
-        $result = $webserviceClient->get(SomeStub::class, 1);
+        $result = $webserviceClient->get(SomeStub74::class, 1);
         
-        $this->assertInstanceOf(SomeStub::class, $result);
-        $this->assertEquals('data', $result->getSome());
-        $this->assertEquals(10, $result->getOther()->getOtherValue());
+        $this->assertInstanceOf(SomeStub74::class, $result);
+        $this->assertEquals('data', $result->some);
+        $this->assertEquals(10, $result->other->getOtherValue());
     }
     
     public function testShouldConsumeCollection()
@@ -112,17 +112,17 @@ class WebserviceClientTest extends TestCase
         
         $webserviceClient = $this->webserviceClient;
         
-        $result = $webserviceClient->cGet(SomeStub::class);
+        $result = $webserviceClient->cGet(SomeStub74::class);
         
         $this->assertCount(2, $result);
         
-        $this->assertInstanceOf(SomeStub::class, $result[0]);
-        $this->assertInstanceOf(SomeStub::class, $result[1]);
-        $this->assertInstanceOf(ExtraStub::class, $result[1]->getOther());
-        $this->assertEquals('data', $result[0]->getSome());
-        $this->assertEquals(10, $result[0]->getOther()->getOtherValue());
-        $this->assertEquals('data2', $result[1]->getSome());
-        $this->assertEquals(11, $result[1]->getOther()->getOtherValue());
+        $this->assertInstanceOf(SomeStub74::class, $result[0]);
+        $this->assertInstanceOf(SomeStub74::class, $result[1]);
+        $this->assertInstanceOf(ExtraStub74::class, $result[1]->other);
+        $this->assertEquals('data', $result[0]->some);
+        $this->assertEquals(10, $result[0]->other->getOtherValue());
+        $this->assertEquals('data2', $result[1]->some);
+        $this->assertEquals(11, $result[1]->other->getOtherValue());
     }
     
     public function testShouldDiscriminate()
@@ -144,12 +144,12 @@ class WebserviceClientTest extends TestCase
         
         $webserviceClient = $this->webserviceClient;
         
-        $result = $webserviceClient->get(SomeStub::class, 1);
+        $result = $webserviceClient->get(SomeStub74::class, 1);
         
-        $this->assertInstanceOf(SomeStub::class, $result);
-        $this->assertInstanceOf(ExtraStub::class, $result->getOther());
-        $this->assertEquals(10, $result->getOther()->getOtherValue());
-        $this->assertEquals(11, $result->getOther()->getExtraValue());
+        $this->assertInstanceOf(SomeStub74::class, $result);
+        $this->assertInstanceOf(ExtraStub74::class, $result->other);
+        $this->assertEquals(10, $result->other->getOtherValue());
+        $this->assertEquals(11, $result->other->getExtraValue());
     }
 
     public function testShouldConvertValues()
@@ -184,16 +184,16 @@ class WebserviceClientTest extends TestCase
         
         $webserviceClient = $this->webserviceClient;
         
-        $result = $webserviceClient->get(SomeStub::class, 1);
+        $result = $webserviceClient->get(SomeStub74::class, 1);
         
-        $this->assertInstanceOf(SomeStub::class, $result);
-        $this->assertInstanceOf(ExtraStub::class, $result->getOther());
-        $this->assertEquals(11, $result->getOther()->getExtraValue());
-        $this->assertCount(2, $result->getOther()->getStubs());
-        $this->assertInstanceOf(ExtraStub::class, $result->getOther()->getStubs()[0]);
-        $this->assertInstanceOf(SomeOtherStub::class, $result->getOther()->getStubs()[1]);
-        $this->assertInstanceOf(DateTime::class, $result->getOther()->getStubs()[0]->getDate());
-        $this->assertEquals('1983-12-20', $result->getOther()->getStubs()[0]->getDate()->format('Y-m-d'));
+        $this->assertInstanceOf(SomeStub74::class, $result);
+        $this->assertInstanceOf(ExtraStub74::class, $result->other);
+        $this->assertEquals(11, $result->other->getExtraValue());
+        $this->assertCount(2, $result->other->getStubs());
+        $this->assertInstanceOf(ExtraStub74::class, $result->other->getStubs()[0]);
+        $this->assertInstanceOf(SomeOtherStub74::class, $result->other->getStubs()[1]);
+        $this->assertInstanceOf(DateTime::class, $result->other->getStubs()[0]->getDate());
+        $this->assertEquals('1983-12-20', $result->other->getStubs()[0]->getDate()->format('Y-m-d'));
     }
     
     public function testShouldUseYmlMetadata()
@@ -228,7 +228,7 @@ class WebserviceClientTest extends TestCase
             )
         );
         
-        $result = $webserviceClient->get(YmlStub::class, 1);
+        $result = $webserviceClient->get(YmlStub74::class, 1);
         
         $this->assertEquals(1, $result->getId());
         $this->assertEquals('lorem', $result->getNome());
@@ -296,14 +296,14 @@ class WebserviceClientTest extends TestCase
 
         $webserviceClient = new WebserviceClient($clientRegistry, $metadataFactory, $serializer, $serializer);
 
-        $transferPost = new YmlStub(null, 'a', 'b');
-        $transferPut = new YmlStub(1, 'a', 'b');
+        $transferPost = new YmlStub74(null, 'a', 'b');
+        $transferPut = new YmlStub74(1, 'a', 'b');
 
         $webserviceClient->post($transferPost);
         $webserviceClient->put($transferPut);
-        $webserviceClient->get(YmlStub::class, 1);
-        $webserviceClient->cGet(YmlStub::class);
-        $webserviceClient->cGet(YmlStub::class, ['nome' => 'a']);
+        $webserviceClient->get(YmlStub74::class, 1);
+        $webserviceClient->cGet(YmlStub74::class);
+        $webserviceClient->cGet(YmlStub74::class, ['nome' => 'a']);
     }
 
     public function testShouldThrowException()
@@ -324,7 +324,7 @@ class WebserviceClientTest extends TestCase
         $webserviceClient = $this->webserviceClient;
 
         try {
-            $webserviceClient->post(new SomeStub());
+            $webserviceClient->post(new SomeStub74());
         } catch (WebserviceResponseException $ex) {
             $this->assertEquals('must be string', $ex->getBody()['violations']['otherValue']);
             $this->assertEquals(400, $ex->getCode());
@@ -342,44 +342,32 @@ class WebserviceClientTest extends TestCase
             new Response(404)
         );
 
-        $this->webserviceClient->cGet(SomeStub::class);
+        $this->webserviceClient->cGet(SomeStub74::class);
     }
 }
 
 /**
  * @Resource(client="some_client", route="/test")
  */
-class SomeStub
+class SomeStub74
 {
     /**
      * @Bindings(source="ds_some")
      *
-     * @var string
      */
-    private $some;
+    public string $some;
     
     /**
      * @Bindings(source="co_other")
      *
-     * @var SomeOtherStub
      */
-    private $other;
-    
-    public function getSome(): string
-    {
-        return $this->some;
-    }
-    
-    public function getOther(): SomeOtherStub
-    {
-        return $this->other;
-    }
+    public SomeOtherStub74 $other;
 }
 
 /**
- * @Discriminator(map={"some": "Vox\Webservice\SomeOtherStub", "extra": "Vox\Webservice\ExtraStub"})
+ * @Discriminator(map={"some": "Vox\Webservice\SomeOtherStub74", "extra": "Vox\Webservice\ExtraStub74"})
  */
-class SomeOtherStub
+class SomeOtherStub74
 {
     /**
      * @var int
@@ -392,7 +380,7 @@ class SomeOtherStub
     }
 }
 
-class ExtraStub extends SomeOtherStub
+class ExtraStub74 extends SomeOtherStub74
 {
     /**
      * @Bindings(source="extra_value")
@@ -402,7 +390,7 @@ class ExtraStub extends SomeOtherStub
     private $extraValue;
     
     /**
-     * @var array<Vox\Webservice\SomeOtherStub>
+     * @var array<Vox\Webservice\SomeOtherStub74>
      */
     private $stubs;
     
@@ -427,7 +415,7 @@ class ExtraStub extends SomeOtherStub
     }
 }
 
-class YmlStub
+class YmlStub74
 {
     /**
      * @var int

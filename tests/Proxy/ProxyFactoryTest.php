@@ -12,10 +12,11 @@ use Vox\Webservice\WebserviceClientInterface;
 
 class ProxyFactoryTest extends TestCase
 {
-    public static function setUpBeforeClass()
+    public static function setUpBeforeClass(): void
     {
+        @exec('rmdir /S /Q c:\tmp\cache');
         exec('rm -rf /tmp/cache');
-        mkdir('/tmp/cache');
+        mkdir('/tmp/cache', 0777, true);
     }
     
     public function testShouldCreateProxy()

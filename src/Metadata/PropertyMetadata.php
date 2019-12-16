@@ -27,8 +27,16 @@ class PropertyMetadata extends BaseMetadata
     {
         parent::__construct($class, $name);
         
-        $this->type     = $this->parseType();
+        $this->type     = $this->parseType() ?? $this->getTypedPorpertyType();
         $this->typeInfo = $this->parseTypeDecoration($this->type);
+    }
+    
+    private function getTypedPorpertyType() {
+        $type = $this->reflection->getType();
+        
+        if ($type) {
+            return $type->getName();
+        }
     }
     
     public function getValue($obj)
@@ -37,7 +45,11 @@ class PropertyMetadata extends BaseMetadata
             $obj = $obj->getWrappedValueHolderValue();
         }
         
-        return parent::getValue($obj);
+        try {
+            return parent::getValue($obj);
+        } catch (\Throwable $e) {
+            return null;
+        }
     }
     
     public function setValue($obj, $value)

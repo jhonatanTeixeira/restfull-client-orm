@@ -22,7 +22,7 @@ class ObjectNormalizerTest extends TestCase
 
     private $serializer;
     
-    protected function setUp()
+    protected function setUp(): void
     {
         $this->normalizer = $normalizer = new Normalizer(
             $metadataFactory = new MetadataFactory(new AnnotationDriver(new AnnotationReader()))
